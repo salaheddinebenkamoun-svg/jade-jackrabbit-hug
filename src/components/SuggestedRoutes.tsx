@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Train, Bus, Zap, ChevronRight, Clock, Footprints, Bike, Car } from 'lucide-react';
+import { Train, Bus, Zap, ChevronRight, Clock, Footprints, Bike, Car, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TRANSPORT_OPTIONS = [
@@ -11,34 +11,35 @@ const TRANSPORT_OPTIONS = [
   { id: 'car', type: 'Cab', line: 'Petit Taxi', color: 'bg-red-500', hex: '#ef4444', category: 'personal', icon: Car },
   
   // Tramway
-  { id: 't1', type: 'Tramway', line: 'T1', color: 'bg-emerald-600', hex: '#059669', category: 'public', icon: Train, duration: '24 min', price: '6 MAD' },
-  { id: 't2', type: 'Tramway', line: 'T2', color: 'bg-orange-500', hex: '#f97316', category: 'public', icon: Train, duration: '31 min', price: '6 MAD' },
-  { id: 't3', type: 'Tramway', line: 'T3', color: 'bg-blue-600', hex: '#2563eb', category: 'public', icon: Train, duration: '28 min', price: '6 MAD' },
-  { id: 't4', type: 'Tramway', line: 'T4', color: 'bg-purple-600', hex: '#9333ea', category: 'public', icon: Train, duration: '35 min', price: '6 MAD' },
+  { id: 't1', type: 'Tramway', line: 'T1', color: 'bg-emerald-600', hex: '#059669', category: 'public', icon: Train, price: '6 MAD' },
+  { id: 't2', type: 'Tramway', line: 'T2', color: 'bg-orange-500', hex: '#f97316', category: 'public', icon: Train, price: '6 MAD' },
+  { id: 't3', type: 'Tramway', line: 'T3', color: 'bg-blue-600', hex: '#2563eb', category: 'public', icon: Train, price: '6 MAD' },
+  { id: 't4', type: 'Tramway', line: 'T4', color: 'bg-purple-600', hex: '#9333ea', category: 'public', icon: Train, price: '6 MAD' },
   
   // Busway
-  { id: 'bw1', type: 'Busway', line: 'BW1', color: 'bg-yellow-500', hex: '#eab308', category: 'public', icon: Zap, duration: '22 min', price: '6 MAD' },
-  { id: 'bw2', type: 'Busway', line: 'BW2', color: 'bg-lime-500', hex: '#84cc16', category: 'public', icon: Zap, duration: '26 min', price: '6 MAD' },
+  { id: 'bw1', type: 'Busway', line: 'BW1', color: 'bg-yellow-500', hex: '#eab308', category: 'public', icon: Zap, price: '6 MAD' },
+  { id: 'bw2', type: 'Busway', line: 'BW2', color: 'bg-lime-500', hex: '#84cc16', category: 'public', icon: Zap, price: '6 MAD' },
   
   // Bus
-  { id: 'bus97', type: 'Bus', line: 'L97', color: 'bg-rose-500', hex: '#f43f5e', category: 'public', icon: Bus, duration: '45 min', price: '5 MAD' },
-  { id: 'bus7', type: 'Bus', line: 'L7', color: 'bg-indigo-500', hex: '#6366f1', category: 'public', icon: Bus, duration: '38 min', price: '5 MAD' },
+  { id: 'bus97', type: 'Bus', line: 'L97', color: 'bg-rose-500', hex: '#f43f5e', category: 'public', icon: Bus, price: '5 MAD' },
+  { id: 'bus7', type: 'Bus', line: 'L7', color: 'bg-indigo-500', hex: '#6366f1', category: 'public', icon: Bus, price: '5 MAD' },
 ];
 
 interface SuggestedRoutesProps {
   isVisible: boolean;
   selectedId: string | null;
-  onSelect: (id: string, color: string, mode: any) => void;
+  onSelect: (id: string, color: string, mode: 'foot' | 'bike' | 'car') => void;
   modeStats: any;
 }
 
 const SuggestedRoutes = ({ isVisible, selectedId, onSelect, modeStats }: SuggestedRoutesProps) => {
   if (!isVisible) return (
-    <div className="p-8 text-center">
-      <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
-        <MapPin className="text-emerald-500" size={32} />
+    <div className="p-12 text-center flex flex-col items-center justify-center h-full">
+      <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mb-6 animate-pulse">
+        <MapPin className="text-emerald-500" size={40} />
       </div>
-      <p className="text-gray-500 font-medium">Choisissez une destination pour voir les trajets</p>
+      <h2 className="text-xl font-black text-gray-900 mb-2">Où allez-vous ?</h2>
+      <p className="text-gray-400 text-sm font-medium max-w-[200px]">Sélectionnez un point de départ et d'arrivée pour voir les options.</p>
     </div>
   );
 
@@ -46,25 +47,33 @@ const SuggestedRoutes = ({ isVisible, selectedId, onSelect, modeStats }: Suggest
   const publicTrans = TRANSPORT_OPTIONS.filter(o => o.category === 'public');
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-8 py-6">
       {/* Personal Transport Section */}
       <section>
-        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-4 mb-3">Options Rapides</h3>
-        <div className="grid grid-cols-3 gap-2 px-4">
+        <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] px-6 mb-4">Options Individuelles</h3>
+        <div className="grid grid-cols-3 gap-3 px-6">
           {personal.map((opt) => {
             const stats = modeStats[opt.id as keyof typeof modeStats];
+            const isSelected = selectedId === opt.id;
             return (
               <button
                 key={opt.id}
-                onClick={() => onSelect(opt.id, opt.hex, opt.id)}
+                onClick={() => onSelect(opt.id, opt.hex, opt.id as any)}
                 className={cn(
-                  "flex flex-col items-center justify-center p-3 rounded-2xl border transition-all",
-                  selectedId === opt.id ? "bg-emerald-50 border-emerald-500 ring-2 ring-emerald-500/10" : "bg-white border-gray-100 hover:border-gray-200"
+                  "flex flex-col items-center justify-center p-4 rounded-3xl border-2 transition-all duration-300",
+                  isSelected 
+                    ? "bg-white border-emerald-500 shadow-xl shadow-emerald-500/10 -translate-y-1" 
+                    : "bg-gray-50 border-transparent hover:bg-white hover:border-gray-200"
                 )}
               >
-                <opt.icon size={20} className={selectedId === opt.id ? "text-emerald-600" : "text-gray-400"} />
-                <span className="text-sm font-black text-gray-900 mt-1">{stats?.duration || '--'} min</span>
-                <span className="text-[9px] font-bold text-gray-400 uppercase">{opt.line}</span>
+                <div className={cn(
+                  "w-10 h-10 rounded-2xl flex items-center justify-center mb-2 transition-colors",
+                  isSelected ? opt.color + " text-white" : "bg-white text-gray-400 shadow-sm"
+                )}>
+                  <opt.icon size={20} />
+                </div>
+                <span className="text-base font-black text-gray-900 leading-none">{stats?.duration || '--'}</span>
+                <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">min</span>
               </button>
             );
           })}
@@ -73,44 +82,54 @@ const SuggestedRoutes = ({ isVisible, selectedId, onSelect, modeStats }: Suggest
 
       {/* Public Transport Section */}
       <section>
-        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-4 mb-3">Transport Public</h3>
-        <div className="space-y-2 px-4">
-          {publicTrans.map((opt) => (
-            <div
-              key={opt.id}
-              onClick={() => onSelect(opt.id, opt.hex, 'car')} // Using 'car' routing as proxy for public transport path
-              className={cn(
-                "bg-white p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between",
-                selectedId === opt.id ? "border-emerald-500 ring-4 ring-emerald-500/10 shadow-lg" : "border-gray-100 shadow-sm hover:shadow-md"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-sm", opt.color)}>
-                  <opt.icon size={20} />
+        <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] px-6 mb-4">Transport Public</h3>
+        <div className="space-y-3 px-6">
+          {publicTrans.map((opt) => {
+            const isSelected = selectedId === opt.id;
+            const stats = modeStats['car']; // Using car stats as proxy for public transport duration
+            return (
+              <div
+                key={opt.id}
+                onClick={() => onSelect(opt.id, opt.hex, 'car')}
+                className={cn(
+                  "bg-white p-5 rounded-[28px] border-2 transition-all duration-300 cursor-pointer flex items-center justify-between group",
+                  isSelected 
+                    ? "border-emerald-500 shadow-xl shadow-emerald-500/10 -translate-y-1" 
+                    : "border-gray-100 hover:border-gray-200 hover:shadow-md"
+                )}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={cn(
+                    "w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110", 
+                    opt.color
+                  )}>
+                    <opt.icon size={24} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-gray-900 text-lg">{opt.line}</span>
+                      <span className="text-xs text-gray-300">•</span>
+                      <span className="text-sm font-black text-gray-700">
+                        {Math.round(stats?.duration * 1.2) || '--'} min
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase mt-0.5">
+                      <Clock size={12} className="text-emerald-500" />
+                      Toutes les 10 min
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-black text-gray-900">{opt.line}</span>
-                    <span className="text-xs text-gray-400">•</span>
-                    <span className="text-sm font-bold text-gray-700">{opt.duration}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400 uppercase">
-                    <Clock size={10} />
-                    Toutes les 10 min
-                  </div>
+                <div className="text-right">
+                  <div className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">{opt.price}</div>
+                  <ChevronRight size={20} className={cn("ml-auto mt-2 transition-colors", isSelected ? "text-emerald-500" : "text-gray-300")} />
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-xs font-black text-emerald-600">{opt.price}</div>
-                <ChevronRight size={16} className={cn("ml-auto mt-1", selectedId === opt.id ? "text-emerald-500" : "text-gray-300")} />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
     </div>
   );
 };
 
-import { MapPin } from 'lucide-react';
 export default SuggestedRoutes;
