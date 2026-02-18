@@ -25,19 +25,19 @@ const TRANSPORT_OPTIONS: TransportOption[] = [
   { id: 'taxi', type: 'Car', line: 'Car', color: 'bg-amber-500', hex: '#f59e0b', category: 'personal', icon: Car, mode: 'taxi' },
 
   // Tramway
-  { id: 't1', type: 'Tramway', line: 'Line 1', color: 'bg-red-600', hex: '#dc2626', category: 'public', icon: Train, price: '6 MAD', mode: 'tramway' },
-  { id: 't2', type: 'Tramway', line: 'Line 2', color: 'bg-green-600', hex: '#16a34a', category: 'public', icon: Train, price: '6 MAD', mode: 'tramway' },
-  { id: 't3', type: 'Tramway', line: 'Line 3', color: 'bg-orange-500', hex: '#f97316', category: 'public', icon: Train, price: '6 MAD', mode: 'tramway' },
-  { id: 't4', type: 'Tramway', line: 'Line 4', color: 'bg-sky-600', hex: '#0284c7', category: 'public', icon: Train, price: '6 MAD', mode: 'tramway' },
+  { id: 't1', type: 'Tramway', line: 'T1', color: 'bg-red-600', hex: '#dc2626', category: 'public', icon: Train, price: '6 MAD', mode: 'tramway' },
+  { id: 't2', type: 'Tramway', line: 'T2', color: 'bg-green-600', hex: '#16a34a', category: 'public', icon: Train, price: '6 MAD', mode: 'tramway' },
+  { id: 't3', type: 'Tramway', line: 'T3', color: 'bg-orange-500', hex: '#f97316', category: 'public', icon: Train, price: '6 MAD', mode: 'tramway' },
+  { id: 't4', type: 'Tramway', line: 'T4', color: 'bg-sky-600', hex: '#0284c7', category: 'public', icon: Train, price: '6 MAD', mode: 'tramway' },
 
   // Busway
-  { id: 'bw1', type: 'Busway', line: 'Line 1', color: 'bg-amber-500', hex: '#f59e0b', category: 'public', icon: Zap, price: '6 MAD', mode: 'busway' },
-  { id: 'bw2', type: 'Busway', line: 'Line 2', color: 'bg-emerald-600', hex: '#059669', category: 'public', icon: Zap, price: '6 MAD', mode: 'busway' },
+  { id: 'bw1', type: 'Busway', line: 'BW1', color: 'bg-amber-500', hex: '#f59e0b', category: 'public', icon: Zap, price: '6 MAD', mode: 'busway' },
+  { id: 'bw2', type: 'Busway', line: 'BW2', color: 'bg-emerald-600', hex: '#059669', category: 'public', icon: Zap, price: '6 MAD', mode: 'busway' },
 
   // Bus
-  { id: 'bus_a', type: 'Bus', line: 'Urban Line A', color: 'bg-violet-500', hex: '#8b5cf6', category: 'public', icon: Bus, price: '5 MAD', mode: 'bus' },
-  { id: 'bus_b', type: 'Bus', line: 'Urban Line B', color: 'bg-blue-500', hex: '#3b82f6', category: 'public', icon: Bus, price: '5 MAD', mode: 'bus' },
-  { id: 'bus_c', type: 'Bus', line: 'Urban Line C', color: 'bg-pink-500', hex: '#ec4899', category: 'public', icon: Bus, price: '5 MAD', mode: 'bus' },
+  { id: 'bus_lissasfa_nations_unies', type: 'Bus', line: 'Lissasfa ↔ Place des Nations Unies', color: 'bg-violet-500', hex: '#8b5cf6', category: 'public', icon: Bus, price: '5 MAD', mode: 'bus' },
+  { id: 'bus_hay_hassani_ain_sebaa', type: 'Bus', line: 'Hay Hassani ↔ Aïn Sebaâ', color: 'bg-blue-500', hex: '#3b82f6', category: 'public', icon: Bus, price: '5 MAD', mode: 'bus' },
+  { id: 'bus_sidi_moumen_oulfa', type: 'Bus', line: 'Sidi Moumen ↔ Oulfa', color: 'bg-pink-500', hex: '#ec4899', category: 'public', icon: Bus, price: '5 MAD', mode: 'bus' },
 ];
 
 interface ModeMetrics {
