@@ -98,10 +98,10 @@ const TransportMap = ({ center, origin, destination, selectedRoutePath, pathColo
         {origin && destination && !selectedRoutePath && (
           <Polyline 
             positions={[origin, destination]} 
-            color="#94a3b8" 
-            weight={3} 
-            opacity={0.5} 
-            dashArray="10, 10"
+            color="#10b981" 
+            weight={4} 
+            opacity={0.8} 
+            dashArray="12, 12"
           />
         )}
       </MapContainer>
