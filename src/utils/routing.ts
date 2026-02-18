@@ -13,8 +13,8 @@ export const getRealRoute = async (
     // OSRM does not expose dedicated tram/busway lanes worldwide, so we use driving
     // geometry and calibrate ETA per mode to feel closer to real-life conditions.
     const osrmProfile = 
-      profile === 'foot' ? 'foot' : 
-      profile === 'bike' ? 'bicycle' : 
+      profile === 'foot' ? 'walking' : 
+      profile === 'bike' ? 'cycling' : 
       'driving';
 
     const url = `https://router.project-osrm.org/route/v1/${osrmProfile}/${origin[1]},${origin[0]};${destination[1]},${destination[0]}?overview=full&geometries=geojson`;
@@ -40,9 +40,13 @@ export const getRealRoute = async (
      */
     
     if (profile === 'foot') {
-      durationMinutes = durationMinutes * 1.1;
+      const calibrated = durationMinutes * 1.1;
+      const realisticMinimum = (distanceKm / 5) * 60;
+      durationMinutes = Math.max(calibrated, realisticMinimum);
     } else if (profile === 'bike') {
-      durationMinutes = durationMinutes * 1.15;
+      const calibrated = durationMinutes * 1.15;
+      const realisticMinimum = (distanceKm / 16) * 60;
+      durationMinutes = Math.max(calibrated, realisticMinimum);
     } else if (profile === 'taxi' || profile === 'car') {
       // In Casa, short trips take longer due to traffic density.
       const trafficFactor = distanceKm < 3 ? 2.2 : 1.6;
