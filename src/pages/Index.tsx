@@ -3,11 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import TransportMap from '@/components/TransportMap';
 import SearchPanel from '@/components/SearchPanel';
-import SuggestedRoutes from '@/components/SuggestedRoutes';
+import SuggestedRoutes, { type RoutingMode } from '@/components/SuggestedRoutes';
 import { getRealRoute } from '@/utils/routing';
 import { showSuccess } from '@/utils/toast';
 
 const CASABLANCA_CENTER: [number, number] = [33.5731, -7.5898];
+
+interface ModeMetric {
+  duration: number;
+  distance: number;
+}
+
+const EMPTY_MODE: ModeMetric = { duration: 0, distance: 0 };
 
 const Index = () => {
   const [origin, setOrigin] = useState<[number, number] | null>(null);
@@ -17,37 +24,44 @@ const Index = () => {
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [routePath, setRoutePath] = useState<[number, number][] | null>(null);
   const [previewPath, setPreviewPath] = useState<[number, number][] | null>(null);
-  const [pathColor, setPathColor] = useState("#10b981");
-  const [isPublic, setIsPublic] = useState(false);
-  const [modeStats, setModeStats] = useState({
-    foot: { duration: 0 },
-    bike: { duration: 0 },
-    car: { duration: 0 },
-    public: { duration: 0 }
+  const [pathColor, setPathColor] = useState('#10b981');
+  const [selectedMode, setSelectedMode] = useState<RoutingMode | null>(null);
+  const [modeStats, setModeStats] = useState<Record<RoutingMode, ModeMetric>>({
+    foot: EMPTY_MODE,
+    bike: EMPTY_MODE,
+    taxi: EMPTY_MODE,
+    tramway: EMPTY_MODE,
+    busway: EMPTY_MODE,
+    bus: EMPTY_MODE,
   });
 
-  // Update base stats and preview path when origin/destination changes
   useEffect(() => {
     const updateStats = async () => {
-      if (origin && destination) {
-        const [foot, bike, car, pub] = await Promise.all([
-          getRealRoute(origin, destination, 'foot'),
-          getRealRoute(origin, destination, 'bike'),
-          getRealRoute(origin, destination, 'car'),
-          getRealRoute(origin, destination, 'public')
-        ]);
-        
-        setModeStats({
-          foot: { duration: foot.duration },
-          bike: { duration: bike.duration },
-          car: { duration: car.duration },
-          public: { duration: pub.duration }
-        });
-
-        // Use the car path as the default preview path because it follows main roads
-        setPreviewPath(car.path);
+      if (!origin || !destination) {
+        return;
       }
+
+      const [foot, bike, taxi, tramway, busway, bus] = await Promise.all([
+        getRealRoute(origin, destination, 'foot'),
+        getRealRoute(origin, destination, 'bike'),
+        getRealRoute(origin, destination, 'taxi'),
+        getRealRoute(origin, destination, 'tramway'),
+        getRealRoute(origin, destination, 'busway'),
+        getRealRoute(origin, destination, 'bus'),
+      ]);
+
+      setModeStats({
+        foot: { duration: foot.duration, distance: foot.distance },
+        bike: { duration: bike.duration, distance: bike.distance },
+        taxi: { duration: taxi.duration, distance: taxi.distance },
+        tramway: { duration: tramway.duration, distance: tramway.distance },
+        busway: { duration: busway.duration, distance: busway.distance },
+        bus: { duration: bus.duration, distance: bus.distance },
+      });
+
+      setPreviewPath(taxi.path);
     };
+
     updateStats();
   }, [origin, destination]);
 
@@ -58,7 +72,7 @@ const Index = () => {
     } else if (!destination) {
       setDestination(latlng);
       setDestinationName(`${latlng[0].toFixed(4)}, ${latlng[1].toFixed(4)}`);
-      showSuccess("Destination définie");
+      showSuccess('Destination définie');
     }
   };
 
@@ -73,7 +87,7 @@ const Index = () => {
     setSelectedRouteId(null);
     setRoutePath(null);
     setPreviewPath(null);
-    setIsPublic(false);
+    setSelectedMode(null);
   };
 
   const handleSwap = () => {
@@ -86,17 +100,17 @@ const Index = () => {
     setSelectedRouteId(null);
     setRoutePath(null);
     setPreviewPath(null);
-    setIsPublic(false);
-    showSuccess("Itinéraire inversé");
+    setSelectedMode(null);
+    showSuccess('Itinéraire inversé');
   };
 
-  const handleSelectOption = async (id: string, color: string, routingMode: 'foot' | 'bike' | 'car' | 'public') => {
+  const handleSelectOption = async (id: string, color: string, routingMode: RoutingMode) => {
     if (!origin || !destination) return;
-    
+
     setSelectedRouteId(id);
     setPathColor(color);
-    setIsPublic(routingMode === 'public');
-    
+    setSelectedMode(routingMode);
+
     const result = await getRealRoute(origin, destination, routingMode);
     setRoutePath(result.path);
     showSuccess(`${id.toUpperCase()} sélectionné`);
@@ -110,13 +124,13 @@ const Index = () => {
     setRoutePath(null);
     setPreviewPath(null);
     setSelectedRouteId(null);
-    setIsPublic(false);
+    setSelectedMode(null);
   };
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-gray-50 font-sans flex">
       <div className="w-full md:w-[400px] h-full bg-white shadow-2xl z-20 flex flex-col border-r border-gray-100">
-        <SearchPanel 
+        <SearchPanel
           originName={originName}
           destinationName={destinationName}
           onSelectLocation={handleSelectLocation}
@@ -125,7 +139,7 @@ const Index = () => {
         />
 
         <div className="flex-1 overflow-y-auto no-scrollbar">
-          <SuggestedRoutes 
+          <SuggestedRoutes
             isVisible={!!(origin && destination)}
             selectedId={selectedRouteId}
             onSelect={handleSelectOption}
@@ -135,14 +149,14 @@ const Index = () => {
       </div>
 
       <div className="flex-1 relative z-10">
-        <TransportMap 
-          center={CASABLANCA_CENTER} 
-          origin={origin} 
-          destination={destination} 
+        <TransportMap
+          center={CASABLANCA_CENTER}
+          origin={origin}
+          destination={destination}
           selectedRoutePath={routePath}
           previewPath={previewPath}
           pathColor={pathColor}
-          isPublicTransport={isPublic}
+          selectedMode={selectedMode}
           onMapClick={handleMapClick}
         />
 

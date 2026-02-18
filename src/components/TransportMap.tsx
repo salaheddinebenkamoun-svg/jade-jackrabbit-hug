@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, ZoomControl, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { type RoutingMode } from './SuggestedRoutes';
 
 const OriginIcon = L.divIcon({
   className: 'custom-div-icon',
@@ -14,7 +15,7 @@ const OriginIcon = L.divIcon({
 
 const DestinationIcon = L.divIcon({
   className: 'custom-div-icon',
-  html: `<div style="background-color: #ef4444; width: 16px; height: 16px; border-radius: 50%; border: 39px solid white; box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);"></div>`,
+  html: `<div style="background-color: #ef4444; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);"></div>`,
   iconSize: [16, 16],
   iconAnchor: [8, 8],
 });
@@ -26,7 +27,7 @@ interface TransportMapProps {
   selectedRoutePath: [number, number][] | null;
   previewPath: [number, number][] | null;
   pathColor?: string;
-  isPublicTransport?: boolean;
+  selectedMode?: RoutingMode | null;
   onMapClick: (latlng: [number, number]) => void;
 }
 
@@ -39,9 +40,21 @@ function MapEvents({ onMapClick }: { onMapClick: (latlng: [number, number]) => v
   return null;
 }
 
-function ChangeView({ center, origin, destination, selectedRoutePath, previewPath }: { center: [number, number], origin: any, destination: any, selectedRoutePath: any, previewPath: any }) {
+function ChangeView({
+  center,
+  origin,
+  destination,
+  selectedRoutePath,
+  previewPath,
+}: {
+  center: [number, number];
+  origin: [number, number] | null;
+  destination: [number, number] | null;
+  selectedRoutePath: [number, number][] | null;
+  previewPath: [number, number][] | null;
+}) {
   const map = useMap();
-  
+
   useEffect(() => {
     if (selectedRoutePath && selectedRoutePath.length > 0) {
       const bounds = L.latLngBounds(selectedRoutePath);
@@ -56,17 +69,37 @@ function ChangeView({ center, origin, destination, selectedRoutePath, previewPat
       map.setView(center, map.getZoom());
     }
   }, [center, origin, destination, selectedRoutePath, previewPath, map]);
-  
+
   return null;
 }
 
-const TransportMap = ({ center, origin, destination, selectedRoutePath, previewPath, pathColor = "#10b981", isPublicTransport, onMapClick }: TransportMapProps) => {
+const getRouteStyle = (selectedMode?: RoutingMode | null) => {
+  switch (selectedMode) {
+    case 'foot':
+      return { weight: 5, opacity: 0.9, dashArray: '3, 10' };
+    case 'bike':
+      return { weight: 6, opacity: 0.9, dashArray: '8, 8' };
+    case 'tramway':
+      return { weight: 10, opacity: 0.9, dashArray: undefined };
+    case 'busway':
+      return { weight: 9, opacity: 0.9, dashArray: '16, 10' };
+    case 'bus':
+      return { weight: 8, opacity: 0.85, dashArray: '10, 12' };
+    case 'taxi':
+    default:
+      return { weight: 7, opacity: 0.85, dashArray: undefined };
+  }
+};
+
+const TransportMap = ({ center, origin, destination, selectedRoutePath, previewPath, pathColor = '#10b981', selectedMode, onMapClick }: TransportMapProps) => {
+  const routeStyle = getRouteStyle(selectedMode);
+
   return (
     <div className="h-full w-full relative z-0">
-      <MapContainer 
-        center={center as L.LatLngExpression} 
-        zoom={13} 
-        scrollWheelZoom={true} 
+      <MapContainer
+        center={center as L.LatLngExpression}
+        zoom={13}
+        scrollWheelZoom
         className="h-full w-full"
         zoomControl={false}
       >
@@ -77,7 +110,7 @@ const TransportMap = ({ center, origin, destination, selectedRoutePath, previewP
         <ZoomControl position="bottomright" />
         <ChangeView center={center} origin={origin} destination={destination} selectedRoutePath={selectedRoutePath} previewPath={previewPath} />
         <MapEvents onMapClick={onMapClick} />
-        
+
         {origin && (
           <Marker position={origin as L.LatLngExpression} icon={OriginIcon}>
             <Popup>Départ</Popup>
@@ -90,21 +123,21 @@ const TransportMap = ({ center, origin, destination, selectedRoutePath, previewP
           </Marker>
         )}
 
-        {/* Selected Route */}
         {selectedRoutePath && (
           <>
-            <Polyline 
-              positions={selectedRoutePath} 
-              color={pathColor} 
-              weight={isPublicTransport ? 10 : 6} 
-              opacity={0.8}
+            <Polyline
+              positions={selectedRoutePath}
+              color={pathColor}
+              weight={routeStyle.weight}
+              opacity={routeStyle.opacity}
+              dashArray={routeStyle.dashArray}
               lineJoin="round"
             />
-            {isPublicTransport && (
-              <Polyline 
-                positions={selectedRoutePath} 
-                color="white" 
-                weight={2} 
+            {(selectedMode === 'tramway' || selectedMode === 'busway' || selectedMode === 'bus') && (
+              <Polyline
+                positions={selectedRoutePath}
+                color="white"
+                weight={2}
                 opacity={0.6}
                 dashArray="10, 10"
                 lineJoin="round"
@@ -113,24 +146,22 @@ const TransportMap = ({ center, origin, destination, selectedRoutePath, previewP
           </>
         )}
 
-        {/* Preview Route (Dashed, following roads) */}
         {origin && destination && !selectedRoutePath && previewPath && (
-          <Polyline 
-            positions={previewPath} 
-            color="#10b981" 
-            weight={4} 
-            opacity={0.8} 
+          <Polyline
+            positions={previewPath}
+            color="#10b981"
+            weight={4}
+            opacity={0.8}
             dashArray="12, 12"
           />
         )}
 
-        {/* Fallback straight line if preview path isn't loaded yet */}
         {origin && destination && !selectedRoutePath && !previewPath && (
-          <Polyline 
-            positions={[origin, destination]} 
-            color="#10b981" 
-            weight={4} 
-            opacity={0.4} 
+          <Polyline
+            positions={[origin, destination]}
+            color="#10b981"
+            weight={4}
+            opacity={0.4}
             dashArray="12, 12"
           />
         )}
