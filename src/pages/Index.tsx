@@ -17,6 +17,7 @@ const Index = () => {
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [routePath, setRoutePath] = useState<[number, number][] | null>(null);
   const [pathColor, setPathColor] = useState("#10b981");
+  const [isPublic, setIsPublic] = useState(false);
   const [modeStats, setModeStats] = useState({
     foot: { duration: 0 },
     bike: { duration: 0 },
@@ -41,9 +42,6 @@ const Index = () => {
           car: { duration: car.duration },
           public: { duration: pub.duration }
         });
-        
-        // We no longer automatically set a default route here.
-        // The user must click an option to see the path on the map.
       }
     };
     updateStats();
@@ -68,9 +66,9 @@ const Index = () => {
       setDestination(latlng);
       setDestinationName(name.split(',')[0]);
     }
-    // Reset selection when locations change
     setSelectedRouteId(null);
     setRoutePath(null);
+    setIsPublic(false);
   };
 
   const handleSwap = () => {
@@ -82,6 +80,7 @@ const Index = () => {
     setDestinationName(tempOriginName);
     setSelectedRouteId(null);
     setRoutePath(null);
+    setIsPublic(false);
     showSuccess("Itinéraire inversé");
   };
 
@@ -90,6 +89,7 @@ const Index = () => {
     
     setSelectedRouteId(id);
     setPathColor(color);
+    setIsPublic(routingMode === 'public');
     
     const result = await getRealRoute(origin, destination, routingMode);
     setRoutePath(result.path);
@@ -103,11 +103,11 @@ const Index = () => {
     setDestinationName('');
     setRoutePath(null);
     setSelectedRouteId(null);
+    setIsPublic(false);
   };
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-gray-50 font-sans flex">
-      {/* Left Sidebar */}
       <div className="w-full md:w-[400px] h-full bg-white shadow-2xl z-20 flex flex-col border-r border-gray-100">
         <SearchPanel 
           originName={originName}
@@ -127,7 +127,6 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Map Area */}
       <div className="flex-1 relative z-10">
         <TransportMap 
           center={CASABLANCA_CENTER} 
@@ -135,10 +134,10 @@ const Index = () => {
           destination={destination} 
           selectedRoutePath={routePath}
           pathColor={pathColor}
+          isPublicTransport={isPublic}
           onMapClick={handleMapClick}
         />
 
-        {/* Floating Branding */}
         <div className="absolute bottom-6 right-6 pointer-events-none">
           <div className="bg-white/90 backdrop-blur-md px-6 py-2 rounded-2xl shadow-2xl border border-white/50 flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />

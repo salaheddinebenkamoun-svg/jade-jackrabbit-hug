@@ -25,6 +25,7 @@ interface TransportMapProps {
   destination: [number, number] | null;
   selectedRoutePath: [number, number][] | null;
   pathColor?: string;
+  isPublicTransport?: boolean;
   onMapClick: (latlng: [number, number]) => void;
 }
 
@@ -55,7 +56,7 @@ function ChangeView({ center, origin, destination, selectedRoutePath }: { center
   return null;
 }
 
-const TransportMap = ({ center, origin, destination, selectedRoutePath, pathColor = "#10b981", onMapClick }: TransportMapProps) => {
+const TransportMap = ({ center, origin, destination, selectedRoutePath, pathColor = "#10b981", isPublicTransport, onMapClick }: TransportMapProps) => {
   return (
     <div className="h-full w-full relative z-0">
       <MapContainer 
@@ -86,13 +87,28 @@ const TransportMap = ({ center, origin, destination, selectedRoutePath, pathColo
         )}
 
         {selectedRoutePath && (
-          <Polyline 
-            positions={selectedRoutePath} 
-            color={pathColor} 
-            weight={6} 
-            opacity={0.8}
-            lineJoin="round"
-          />
+          <>
+            {/* Main Route Line */}
+            <Polyline 
+              positions={selectedRoutePath} 
+              color={pathColor} 
+              weight={isPublicTransport ? 10 : 6} 
+              opacity={0.8}
+              lineJoin="round"
+            />
+            
+            {/* Rail/Track Effect for Public Transport */}
+            {isPublicTransport && (
+              <Polyline 
+                positions={selectedRoutePath} 
+                color="white" 
+                weight={2} 
+                opacity={0.6}
+                dashArray="10, 10"
+                lineJoin="round"
+              />
+            )}
+          </>
         )}
 
         {origin && destination && !selectedRoutePath && (
