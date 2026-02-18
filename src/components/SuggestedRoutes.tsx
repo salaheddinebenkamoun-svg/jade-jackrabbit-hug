@@ -20,23 +20,24 @@ interface TransportOption {
 
 const TRANSPORT_OPTIONS: TransportOption[] = [
   // Personal Transport
-  { id: 'foot', type: 'Walk', line: 'Marche', color: 'bg-emerald-500', hex: '#10b981', category: 'personal', icon: Footprints, mode: 'foot' },
-  { id: 'bike', type: 'Cycle', line: 'Vélo', color: 'bg-blue-500', hex: '#3b82f6', category: 'personal', icon: Bike, mode: 'bike' },
-  { id: 'taxi', type: 'Cab', line: 'Petit Taxi', color: 'bg-red-500', hex: '#ef4444', category: 'personal', icon: Car, mode: 'taxi' },
+  { id: 'foot', type: 'Walk', line: 'Walk', color: 'bg-emerald-500', hex: '#10b981', category: 'personal', icon: Footprints, mode: 'foot' },
+  { id: 'bike', type: 'Cycle', line: 'Cycle', color: 'bg-blue-500', hex: '#2563eb', category: 'personal', icon: Bike, mode: 'bike' },
+  { id: 'taxi', type: 'Car', line: 'Car', color: 'bg-amber-500', hex: '#f59e0b', category: 'personal', icon: Car, mode: 'taxi' },
 
   // Tramway
-  { id: 't1', type: 'Tramway', line: 'T1', color: 'bg-emerald-600', hex: '#059669', category: 'public', icon: Train, price: '6 MAD', mode: 'tramway' },
-  { id: 't2', type: 'Tramway', line: 'T2', color: 'bg-orange-500', hex: '#f97316', category: 'public', icon: Train, price: '6 MAD', mode: 'tramway' },
-  { id: 't3', type: 'Tramway', line: 'T3', color: 'bg-blue-600', hex: '#2563eb', category: 'public', icon: Train, price: '6 MAD', mode: 'tramway' },
-  { id: 't4', type: 'Tramway', line: 'T4', color: 'bg-purple-600', hex: '#9333ea', category: 'public', icon: Train, price: '6 MAD', mode: 'tramway' },
+  { id: 't1', type: 'Tramway', line: 'Line 1', color: 'bg-red-600', hex: '#dc2626', category: 'public', icon: Train, price: '6 MAD', mode: 'tramway' },
+  { id: 't2', type: 'Tramway', line: 'Line 2', color: 'bg-green-600', hex: '#16a34a', category: 'public', icon: Train, price: '6 MAD', mode: 'tramway' },
+  { id: 't3', type: 'Tramway', line: 'Line 3', color: 'bg-orange-500', hex: '#f97316', category: 'public', icon: Train, price: '6 MAD', mode: 'tramway' },
+  { id: 't4', type: 'Tramway', line: 'Line 4', color: 'bg-sky-600', hex: '#0284c7', category: 'public', icon: Train, price: '6 MAD', mode: 'tramway' },
 
   // Busway
-  { id: 'bw1', type: 'Busway', line: 'BW1', color: 'bg-yellow-500', hex: '#eab308', category: 'public', icon: Zap, price: '6 MAD', mode: 'busway' },
-  { id: 'bw2', type: 'Busway', line: 'BW2', color: 'bg-lime-500', hex: '#84cc16', category: 'public', icon: Zap, price: '6 MAD', mode: 'busway' },
+  { id: 'bw1', type: 'Busway', line: 'Line 1', color: 'bg-amber-500', hex: '#f59e0b', category: 'public', icon: Zap, price: '6 MAD', mode: 'busway' },
+  { id: 'bw2', type: 'Busway', line: 'Line 2', color: 'bg-emerald-600', hex: '#059669', category: 'public', icon: Zap, price: '6 MAD', mode: 'busway' },
 
   // Bus
-  { id: 'bus97', type: 'Bus', line: 'L97', color: 'bg-rose-500', hex: '#f43f5e', category: 'public', icon: Bus, price: '5 MAD', mode: 'bus' },
-  { id: 'bus7', type: 'Bus', line: 'L7', color: 'bg-indigo-500', hex: '#6366f1', category: 'public', icon: Bus, price: '5 MAD', mode: 'bus' },
+  { id: 'bus_a', type: 'Bus', line: 'Urban Line A', color: 'bg-violet-500', hex: '#8b5cf6', category: 'public', icon: Bus, price: '5 MAD', mode: 'bus' },
+  { id: 'bus_b', type: 'Bus', line: 'Urban Line B', color: 'bg-blue-500', hex: '#3b82f6', category: 'public', icon: Bus, price: '5 MAD', mode: 'bus' },
+  { id: 'bus_c', type: 'Bus', line: 'Urban Line C', color: 'bg-pink-500', hex: '#ec4899', category: 'public', icon: Bus, price: '5 MAD', mode: 'bus' },
 ];
 
 interface ModeMetrics {
@@ -91,8 +92,8 @@ const SuggestedRoutes = ({ isVisible, selectedId, onSelect, modeStats }: Suggest
                 )}>
                   <opt.icon size={20} />
                 </div>
-                <span className="text-base font-black text-gray-900 leading-none">{stats?.duration || '--'}</span>
-                <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">min · {stats?.distance || '--'} km</span>
+                <span className="text-base font-black text-gray-900 leading-none">{stats?.duration || '--'} min</span>
+                <span className="text-[9px] font-bold text-gray-400 uppercase mt-1">{stats?.distance || '--'} km</span>
               </button>
             );
           })}
