@@ -4,91 +4,128 @@ import React, { useState } from 'react';
 import TransportMap from '@/components/TransportMap';
 import SearchPanel from '@/components/SearchPanel';
 import SuggestedRoutes from '@/components/SuggestedRoutes';
+import RouteDetails from '@/components/RouteDetails';
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { MapPin, Navigation, Layers } from 'lucide-react';
-import { showSuccess, showError } from '@/utils/toast';
+import { Navigation, Layers, Map as MapIcon } from 'lucide-react';
+import { showSuccess } from '@/utils/toast';
 
 const CASABLANCA_CENTER: [number, number] = [33.5731, -7.5898];
 
-// Mock coordinates for Casablanca locations
-const LOCATIONS: Record<string, [number, number]> = {
-  "Maarif": [33.5819, -7.6324],
-  "Sidi Moumen": [33.5867, -7.5317],
-  "Casa Voyageurs": [33.5892, -7.5975],
-  "Morocco Mall": [33.5883, -7.7058],
-  "Technopark": [33.5415, -7.6345]
-};
+const MOCK_ROUTES = [
+  {
+    id: 1,
+    type: 'Tramway',
+    line: 'T1',
+    color: 'bg-emerald-600',
+    duration: '24 min',
+    arrival: '14:42',
+    price: '6 MAD',
+    steps: ['Marche 5 min', 'T1 (Sidi Moumen)', 'Marche 2 min']
+  },
+  {
+    id: 2,
+    type: 'Busway',
+    line: 'BW1',
+    color: 'bg-blue-600',
+    duration: '32 min',
+    arrival: '14:50',
+    price: '6 MAD',
+    steps: ['Marche 3 min', 'BW1 (Laymoun)', 'Marche 8 min']
+  }
+];
 
 const Index = () => {
   const [origin, setOrigin] = useState<[number, number] | null>(null);
   const [destination, setDestination] = useState<[number, number] | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>(CASABLANCA_CENTER);
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedRoute, setSelectedRoute] = useState<any>(null);
 
-  const handleSearch = (from: string, to: string) => {
-    // Simulate finding coordinates for the search terms
-    // In a real app, this would use a Geocoding API
-    const fromCoord = LOCATIONS[from] || [33.58, -7.60];
-    const toCoord = LOCATIONS[to] || [33.59, -7.55];
-    
-    setOrigin(fromCoord);
-    setDestination(toCoord);
-    setMapCenter(fromCoord);
-    setIsSearching(true);
-    showSuccess("Itinéraire calculé");
-  };
-
-  const handleSelectCurrentLocation = () => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const loc: [number, number] = [position.coords.latitude, position.coords.longitude];
-          setOrigin(loc);
-          setMapCenter(loc);
-          showSuccess("Position actuelle sélectionnée comme départ");
-        },
-        (error) => {
-          showError("Impossible d'accéder à votre position");
-        }
-      );
+  const handleMapClick = (latlng: [number, number]) => {
+    if (!origin) {
+      setOrigin(latlng);
+      showSuccess("Départ défini sur la carte");
+    } else if (!destination) {
+      setDestination(latlng);
+      setIsSearching(true);
+      showSuccess("Destination définie, calcul de l'itinéraire...");
+    } else {
+      // Reset and start over
+      setOrigin(latlng);
+      setDestination(null);
+      setIsSearching(false);
+      setSelectedRoute(null);
     }
   };
+
+  const handleSearch = (from: string, to: string) => {
+    // Mock coordinates for search
+    setOrigin([33.5819, -7.6324]);
+    setDestination([33.5892, -7.5975]);
+    setIsSearching(true);
+    showSuccess("Itinéraire trouvé");
+  };
+
+  const handleSelectRoute = (route: any) => {
+    setSelectedRoute(route);
+  };
+
+  // Mock path for the polyline
+  const routePath: [number, number][] = origin && destination ? [
+    origin,
+    [origin[0] + (destination[0] - origin[0]) / 2, origin[1]],
+    [origin[0] + (destination[0] - origin[0]) / 2, destination[1]],
+    destination
+  ] : [];
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-gray-50 font-sans">
       {/* Map Background */}
       <div className="absolute inset-0 z-0">
-        <TransportMap center={mapCenter} origin={origin} destination={destination} />
+        <TransportMap 
+          center={mapCenter} 
+          origin={origin} 
+          destination={destination} 
+          onMapClick={handleMapClick}
+          routePath={isSearching ? routePath : undefined}
+        />
       </div>
 
       {/* Overlay UI */}
       <div className="absolute inset-0 z-10 pointer-events-none flex flex-col md:flex-row p-4 md:p-6 gap-6">
         {/* Left Sidebar / Panel */}
         <div className="w-full md:w-[400px] pointer-events-auto flex flex-col h-full max-h-[90vh] md:max-h-full">
-          <div className="flex-shrink-0">
-            <SearchPanel 
-              onSearch={handleSearch} 
-              onSelectCurrentLocation={handleSelectCurrentLocation}
+          {!selectedRoute ? (
+            <>
+              <div className="flex-shrink-0">
+                <SearchPanel 
+                  onSearch={handleSearch} 
+                  onSelectCurrentLocation={() => {}}
+                />
+              </div>
+              
+              <div className="flex-1 overflow-y-auto mt-2 no-scrollbar pb-20">
+                <div onClick={() => isSearching && handleSelectRoute(MOCK_ROUTES[0])}>
+                  <SuggestedRoutes isVisible={isSearching} />
+                </div>
+              </div>
+            </>
+          ) : (
+            <RouteDetails 
+              route={selectedRoute} 
+              onBack={() => setSelectedRoute(null)} 
             />
-          </div>
-          
-          <div className="flex-1 overflow-y-auto mt-2 no-scrollbar pb-20">
-            <SuggestedRoutes isVisible={isSearching} />
-          </div>
+          )}
         </div>
 
         {/* Floating Action Buttons */}
         <div className="absolute bottom-10 right-6 flex flex-col gap-3 pointer-events-auto">
-          <button 
-            className="w-12 h-12 bg-white rounded-2xl shadow-xl flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-all active:scale-95 border border-gray-100"
-            title="Changer de vue"
-          >
+          <button className="w-12 h-12 bg-white rounded-2xl shadow-xl flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-all border border-gray-100">
             <Layers size={20} />
           </button>
           <button 
             onClick={() => origin && setMapCenter(origin)}
-            className="w-12 h-12 bg-white rounded-2xl shadow-xl flex items-center justify-center text-emerald-600 hover:bg-emerald-50 transition-all active:scale-95 border border-gray-100"
-            title="Centrer sur le départ"
+            className="w-12 h-12 bg-white rounded-2xl shadow-xl flex items-center justify-center text-emerald-600 hover:bg-emerald-50 transition-all border border-gray-100"
           >
             <Navigation size={20} />
           </button>
