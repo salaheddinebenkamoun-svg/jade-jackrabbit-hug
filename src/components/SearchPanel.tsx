@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { X, Search, MapPin, ArrowUpDown } from 'lucide-react';
+import { X, Search, MapPin, ArrowUpDown, Navigation } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { showError } from '@/utils/toast';
 
 interface SearchPanelProps {
   originName: string;
@@ -29,6 +30,23 @@ const SearchPanel = ({ originName, destinationName, onSelectLocation, onSwap, on
     } catch (e) { console.error(e); }
   };
 
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) {
+      showError("La géolocalisation n'est pas supportée par votre navigateur");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        onSelectLocation('origin', [latitude, longitude], "Ma position actuelle");
+      },
+      () => {
+        showError("Impossible d'accéder à votre position");
+      }
+    );
+  };
+
   return (
     <div className="bg-emerald-600 p-6 rounded-b-[40px] shadow-2xl pointer-events-auto">
       <div className="flex items-center justify-between mb-6">
@@ -46,31 +64,47 @@ const SearchPanel = ({ originName, destinationName, onSelectLocation, onSwap, on
       <div className="bg-white rounded-2xl p-4 shadow-inner relative">
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-black text-emerald-600 w-10 uppercase">Start</span>
-            <input
-              type="text"
-              placeholder="Point de départ"
-              value={queries.origin}
-              onChange={(e) => {
-                setQueries(p => ({ ...p, origin: e.target.value }));
-                search(e.target.value, 'origin');
-              }}
-              className="flex-1 text-sm font-bold text-gray-800 focus:outline-none placeholder:text-gray-300"
-            />
+            <button 
+              onClick={handleLocateMe}
+              className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center hover:bg-emerald-100 transition-colors"
+              title="Ma position"
+            >
+              <Navigation size={18} />
+            </button>
+            <div className="flex-1">
+              <span className="text-[10px] font-black text-emerald-600 block uppercase">Départ</span>
+              <input
+                type="text"
+                placeholder="Point de départ"
+                value={queries.origin}
+                onChange={(e) => {
+                  setQueries(p => ({ ...p, origin: e.target.value }));
+                  search(e.target.value, 'origin');
+                }}
+                className="w-full text-sm font-bold text-gray-800 focus:outline-none placeholder:text-gray-300 bg-transparent"
+              />
+            </div>
           </div>
+          
           <div className="h-[1px] bg-gray-100 ml-12" />
+          
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-black text-red-500 w-10 uppercase">End</span>
-            <input
-              type="text"
-              placeholder="Où allez-vous ?"
-              value={queries.destination}
-              onChange={(e) => {
-                setQueries(p => ({ ...p, destination: e.target.value }));
-                search(e.target.value, 'destination');
-              }}
-              className="flex-1 text-sm font-bold text-gray-800 focus:outline-none placeholder:text-gray-300"
-            />
+            <div className="w-10 h-10 flex items-center justify-center text-red-500">
+              <MapPin size={20} />
+            </div>
+            <div className="flex-1">
+              <span className="text-[10px] font-black text-red-500 block uppercase">Arrivée</span>
+              <input
+                type="text"
+                placeholder="Où allez-vous ?"
+                value={queries.destination}
+                onChange={(e) => {
+                  setQueries(p => ({ ...p, destination: e.target.value }));
+                  search(e.target.value, 'destination');
+                }}
+                className="w-full text-sm font-bold text-gray-800 focus:outline-none placeholder:text-gray-300 bg-transparent"
+              />
+            </div>
           </div>
         </div>
 
