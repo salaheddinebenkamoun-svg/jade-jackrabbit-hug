@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { MapPin, Search, X, Loader2, Navigation } from 'lucide-react';
+import { MapPin, Search, X, Loader2, ArrowUpDown, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SearchPanelProps {
@@ -20,7 +20,6 @@ const SearchPanel = ({ origin, destination, onSelectLocation, onReset }: SearchP
     if (query.length < 3) return;
     setLoading(true);
     try {
-      // Using Nominatim (OpenStreetMap) for free geocoding
       const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + " Casablanca")}&limit=5`);
       const data = await response.json();
       setSuggestions({ type, items: data });
@@ -53,88 +52,93 @@ const SearchPanel = ({ origin, destination, onSelectLocation, onReset }: SearchP
   };
 
   return (
-    <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-md mx-auto border border-gray-100 pointer-events-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-black text-emerald-600 tracking-tight">CasaWay</h2>
-        {(origin || destination) && (
-          <button onClick={onReset} className="p-2 hover:bg-red-50 rounded-full text-red-500 transition-colors">
-            <X size={20} />
+    <div className="w-full max-w-md mx-auto pointer-events-auto">
+      {/* Header Style Citymapper */}
+      <div className="bg-[#28a745] p-4 rounded-t-[32px] flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2 hover:bg-white/10 rounded-lg transition-colors cursor-pointer">
+            <Menu className="text-white" size={24} />
+          </div>
+          <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full">
+            <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center text-[10px]">🇲🇦</div>
+            <span className="text-white font-bold text-sm">Casablanca</span>
+          </div>
+        </div>
+        <div className="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center text-xl shadow-lg">
+          😍
+        </div>
+      </div>
+
+      {/* Input Card */}
+      <div className="bg-white p-5 shadow-2xl border-x border-b border-gray-100 relative">
+        <div className="space-y-0 relative">
+          {/* Origin */}
+          <div className="relative flex items-center border-b border-gray-100 pb-3">
+            <span className="text-[#28a745] font-bold text-sm w-12">Start</span>
+            <input
+              type="text"
+              placeholder="Point de départ"
+              value={searchQuery.origin}
+              onChange={(e) => setSearchQuery(prev => ({ ...prev, origin: e.target.value }))}
+              className="flex-1 bg-transparent border-none focus:ring-0 text-gray-800 font-medium placeholder:text-gray-300"
+            />
+            {searchQuery.origin && (
+              <button onClick={() => setSearchQuery(prev => ({ ...prev, origin: '' }))} className="text-gray-300 hover:text-gray-500">
+                <X size={18} />
+              </button>
+            )}
+          </div>
+
+          {/* Destination */}
+          <div className="relative flex items-center pt-3">
+            <span className="text-[#ff3b30] font-bold text-sm w-12">End</span>
+            <input
+              type="text"
+              placeholder="Où allez-vous ?"
+              value={searchQuery.destination}
+              onChange={(e) => setSearchQuery(prev => ({ ...prev, destination: e.target.value }))}
+              className="flex-1 bg-transparent border-none focus:ring-0 text-gray-800 font-medium placeholder:text-gray-300"
+            />
+            {searchQuery.destination && (
+              <button onClick={() => setSearchQuery(prev => ({ ...prev, destination: '' }))} className="text-gray-300 hover:text-gray-500">
+                <X size={18} />
+              </button>
+            )}
+          </div>
+
+          {/* Swap Button */}
+          <button className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-200 transition-colors z-10 border-2 border-white">
+            <ArrowUpDown size={16} />
           </button>
-        )}
-      </div>
-
-      <div className="space-y-4 relative">
-        {/* Origin Input */}
-        <div className="relative">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-blue-500 border-2 border-white shadow-sm z-10" />
-          <input
-            type="text"
-            placeholder="Point de départ"
-            value={searchQuery.origin}
-            onChange={(e) => setSearchQuery(prev => ({ ...prev, origin: e.target.value }))}
-            className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-emerald-500 transition-all"
-          />
-          {suggestions.type === 'origin' && suggestions.items.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden">
-              {suggestions.items.map((item, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleSelect(item, 'origin')}
-                  className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 border-b border-gray-50 last:border-none flex items-center gap-3"
-                >
-                  <MapPin size={16} className="text-gray-400" />
-                  <span className="truncate font-medium">{item.display_name}</span>
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
-        {/* Destination Input */}
-        <div className="relative">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2">
-            <MapPin size={18} className="text-red-500 z-10" />
-          </div>
-          <input
-            type="text"
-            placeholder="Où allez-vous ?"
-            value={searchQuery.destination}
-            onChange={(e) => setSearchQuery(prev => ({ ...prev, destination: e.target.value }))}
-            className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-emerald-500 transition-all"
-          />
-          {suggestions.type === 'destination' && suggestions.items.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden">
-              {suggestions.items.map((item, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleSelect(item, 'destination')}
-                  className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 border-b border-gray-50 last:border-none flex items-center gap-3"
-                >
-                  <MapPin size={16} className="text-gray-400" />
-                  <span className="truncate font-medium">{item.display_name}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {loading && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2">
-            <Loader2 size={18} className="animate-spin text-emerald-500" />
+        {/* Suggestions Dropdown */}
+        {suggestions.items.length > 0 && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+            {suggestions.items.map((item, i) => (
+              <button
+                key={i}
+                onClick={() => handleSelect(item, suggestions.type)}
+                className="w-full px-5 py-4 text-left hover:bg-gray-50 border-b border-gray-50 last:border-none flex items-center gap-4 group"
+              >
+                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+                  <MapPin size={16} className="text-gray-400 group-hover:text-emerald-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-800 truncate">{item.display_name.split(',')[0]}</p>
+                  <p className="text-xs text-gray-400 truncate">{item.display_name}</p>
+                </div>
+              </button>
+            ))}
           </div>
         )}
       </div>
 
-      {!origin && !destination && (
-        <div className="mt-6 p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center gap-3">
-          <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white">
-            <Navigation size={16} />
-          </div>
-          <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
-            Tapez un lieu ou cliquez sur la carte
-          </p>
-        </div>
-      )}
+      {/* Time Selector */}
+      <div className="bg-white p-4 rounded-b-[32px] border-t border-gray-50 flex items-center gap-2 text-[#28a745] font-bold text-sm cursor-pointer hover:bg-gray-50 transition-colors">
+        <span>Now</span>
+        <ArrowUpDown size={14} className="rotate-90" />
+      </div>
     </div>
   );
 };
