@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import TransportMap from '@/components/TransportMap';
 import SearchPanel from '@/components/SearchPanel';
-import ModeSelector from '@/components/ModeSelector';
 import SuggestedRoutes from '@/components/SuggestedRoutes';
 import { getRealRoute } from '@/utils/routing';
 import { showSuccess } from '@/utils/toast';
@@ -15,42 +14,32 @@ const Index = () => {
   const [destination, setDestination] = useState<[number, number] | null>(null);
   const [originName, setOriginName] = useState('');
   const [destinationName, setDestinationName] = useState('');
-  const [selectedMode, setSelectedMode] = useState<'foot' | 'bike' | 'car'>('car');
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [routePath, setRoutePath] = useState<[number, number][] | null>(null);
   const [pathColor, setPathColor] = useState("#10b981");
   const [modeStats, setModeStats] = useState({
-    foot: { duration: 0, extra: '0 cal' },
-    bike: { duration: 0, extra: '0 cal' },
-    car: { duration: 0, extra: 'Cab' }
+    foot: { duration: 0 },
+    bike: { duration: 0 },
+    car: { duration: 0 }
   });
 
-  const updateRealRoute = async (start: [number, number], end: [number, number], mode: 'foot' | 'bike' | 'car') => {
-    const result = await getRealRoute(start, end, mode);
-    setRoutePath(result.path);
-    
-    // Set color based on mode
-    if (mode === 'foot') setPathColor("#10b981");
-    else if (mode === 'bike') setPathColor("#3b82f6");
-    else setPathColor("#64748b");
-
-    // Update stats for all modes
+  const updateStats = async (start: [number, number], end: [number, number]) => {
     const foot = await getRealRoute(start, end, 'foot');
     const bike = await getRealRoute(start, end, 'bike');
     const car = await getRealRoute(start, end, 'car');
     
     setModeStats({
-      foot: { duration: foot.duration, extra: `${Math.round(foot.duration * 4.1)} cal` },
-      bike: { duration: bike.duration, extra: `${Math.round(bike.duration * 4.2)} cal` },
-      car: { duration: car.duration, extra: 'Cab' }
+      foot: { duration: foot.duration },
+      bike: { duration: bike.duration },
+      car: { duration: car.duration }
     });
   };
 
   useEffect(() => {
-    if (origin && destination && !selectedRouteId) {
-      updateRealRoute(origin, destination, selectedMode);
+    if (origin && destination) {
+      updateStats(origin, destination);
     }
-  }, [origin, destination, selectedMode, selectedRouteId]);
+  }, [origin, destination]);
 
   const handleMapClick = (latlng: [number, number]) => {
     if (!origin) {
@@ -72,6 +61,7 @@ const Index = () => {
       setDestinationName(name.split(',')[0]);
     }
     setSelectedRouteId(null);
+    setRoutePath(null);
   };
 
   const handleSwap = () => {
@@ -82,18 +72,17 @@ const Index = () => {
     setDestination(tempOrigin);
     setDestinationName(tempOriginName);
     setSelectedRouteId(null);
+    setRoutePath(null);
     showSuccess("Départ et arrivée inversés");
   };
 
-  const handleSelectPublicTransport = async (id: string, color: string) => {
+  const handleSelectOption = async (id: string, color: string, routingMode: 'foot' | 'bike' | 'car') => {
     setSelectedRouteId(id);
     setPathColor(color);
     if (origin && destination) {
-      // For public transport, we use the 'car' route as a base for the map path
-      // but style it with the transport line's color
-      const result = await getRealRoute(origin, destination, 'car');
+      const result = await getRealRoute(origin, destination, routingMode);
       setRoutePath(result.path);
-      showSuccess(`Ligne ${id.toUpperCase()} sélectionnée`);
+      showSuccess(`${id.toUpperCase()} sélectionné`);
     }
   };
 
@@ -107,19 +96,9 @@ const Index = () => {
   };
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-gray-50 font-sans">
-      <div className="absolute inset-0 z-0">
-        <TransportMap 
-          center={CASABLANCA_CENTER} 
-          origin={origin} 
-          destination={destination} 
-          selectedRoutePath={routePath}
-          pathColor={pathColor}
-          onMapClick={handleMapClick}
-        />
-      </div>
-
-      <div className="absolute inset-0 z-10 pointer-events-none flex flex-col">
+    <div className="relative h-screen w-full overflow-hidden bg-gray-50 font-sans flex">
+      {/* Left Sidebar */}
+      <div className="w-full md:w-[400px] h-full bg-white shadow-2xl z-20 flex flex-col border-r border-gray-100">
         <SearchPanel 
           originName={originName}
           destinationName={destinationName}
@@ -128,36 +107,33 @@ const Index = () => {
           onReset={handleReset}
         />
 
-        <div className="flex-1 overflow-y-auto px-4 md:px-6 pt-4 no-scrollbar">
-          <div className="max-w-md mx-auto space-y-4">
-            {origin && destination && (
-              <ModeSelector 
-                selectedMode={selectedMode}
-                onSelect={(mode) => {
-                  setSelectedMode(mode);
-                  setSelectedRouteId(null);
-                }}
-                options={[
-                  { id: 'foot', label: 'Walk', icon: null, ...modeStats.foot },
-                  { id: 'bike', label: 'Cycle', icon: null, ...modeStats.bike },
-                  { id: 'car', label: 'Cab', icon: null, ...modeStats.car }
-                ]}
-              />
-            )}
-
-            <SuggestedRoutes 
-              isVisible={!!(origin && destination)}
-              selectedId={selectedRouteId}
-              onSelect={handleSelectPublicTransport}
-            />
-          </div>
+        <div className="flex-1 overflow-y-auto no-scrollbar">
+          <SuggestedRoutes 
+            isVisible={!!(origin && destination)}
+            selectedId={selectedRouteId}
+            onSelect={handleSelectOption}
+            modeStats={modeStats}
+          />
         </div>
       </div>
 
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-        <div className="bg-white/90 backdrop-blur-md px-6 py-2 rounded-2xl shadow-2xl border border-white/50 flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[11px] font-black text-gray-800 uppercase tracking-[0.3em]">CasaWay Live</span>
+      {/* Map Area */}
+      <div className="flex-1 relative z-10">
+        <TransportMap 
+          center={CASABLANCA_CENTER} 
+          origin={origin} 
+          destination={destination} 
+          selectedRoutePath={routePath}
+          pathColor={pathColor}
+          onMapClick={handleMapClick}
+        />
+
+        {/* Floating Branding */}
+        <div className="absolute bottom-6 right-6 pointer-events-none">
+          <div className="bg-white/90 backdrop-blur-md px-6 py-2 rounded-2xl shadow-2xl border border-white/50 flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[11px] font-black text-gray-800 uppercase tracking-[0.3em]">CasaWay Live</span>
+          </div>
         </div>
       </div>
     </div>
