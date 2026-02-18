@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import TransportMap from '@/components/TransportMap';
 import SearchPanel from '@/components/SearchPanel';
 import SuggestedRoutes, { type RoutingMode } from '@/components/SuggestedRoutes';
-import { getRealRoute } from '@/utils/routing';
+import { getRealRoute, getRouteByOption } from '@/utils/routing';
 import { showSuccess } from '@/utils/toast';
 
 const CASABLANCA_CENTER: [number, number] = [33.5731, -7.5898];
@@ -111,7 +111,7 @@ const Index = () => {
     setPathColor(color);
     setSelectedMode(routingMode);
 
-    const result = await getRealRoute(origin, destination, routingMode);
+    const result = await getRouteByOption(origin, destination, id, routingMode);
     setRoutePath(result.path);
     showSuccess(`${id.toUpperCase()} sélectionné`);
   };

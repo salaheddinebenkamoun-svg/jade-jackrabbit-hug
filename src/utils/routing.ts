@@ -76,3 +76,53 @@ export const getRealRoute = async (
     };
   }
 };
+
+const applyOffsetToPath = (
+  path: [number, number][],
+  amplitude: number,
+  phase = 0
+): [number, number][] => {
+  if (path.length < 3 || amplitude === 0) return path;
+
+  return path.map(([lat, lng], index) => {
+    if (index === 0 || index === path.length - 1) return [lat, lng];
+    const wave = Math.sin((index / (path.length - 1)) * Math.PI * 2 + phase);
+    const offset = wave * amplitude;
+    return [lat + offset, lng - offset * 0.65];
+  });
+};
+
+/**
+ * Returns a route path variant per selected option so each line appears on its own corridor.
+ */
+export const getRouteByOption = async (
+  origin: [number, number],
+  destination: [number, number],
+  optionId: string,
+  mode: 'foot' | 'bike' | 'taxi' | 'tramway' | 'busway' | 'bus'
+): Promise<{ path: [number, number][], duration: number, distance: number }> => {
+  const result = await getRealRoute(origin, destination, mode);
+
+  const offsets: Record<string, { amp: number; phase: number }> = {
+    foot: { amp: 0.0001, phase: 0 },
+    bike: { amp: 0.00015, phase: 0.6 },
+    taxi: { amp: 0.0002, phase: 0.9 },
+    t1: { amp: 0.00045, phase: 0 },
+    t2: { amp: 0.00055, phase: 1.3 },
+    t3: { amp: 0.0004, phase: 2.1 },
+    t4: { amp: 0.0005, phase: 2.8 },
+    bw1: { amp: 0.00035, phase: 0.8 },
+    bw2: { amp: 0.0003, phase: 2.2 },
+    bus_a: { amp: 0.00065, phase: 0.3 },
+    bus_b: { amp: 0.00075, phase: 1.8 },
+    bus_c: { amp: 0.0007, phase: 2.6 },
+  };
+
+  const variant = offsets[optionId];
+  if (!variant) return result;
+
+  return {
+    ...result,
+    path: applyOffsetToPath(result.path, variant.amp, variant.phase),
+  };
+};
