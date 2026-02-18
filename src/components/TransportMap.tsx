@@ -7,16 +7,16 @@ import L from 'leaflet';
 
 const OriginIcon = L.divIcon({
   className: 'custom-div-icon',
-  html: `<div style="background-color: #00d66b; width: 20px; height: 20px; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.2);"></div>`,
-  iconSize: [20, 20],
-  iconAnchor: [10, 10],
+  html: `<div style="background-color: #3b82f6; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);"></div>`,
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
 });
 
 const DestinationIcon = L.divIcon({
   className: 'custom-div-icon',
-  html: `<div style="background-color: #ff3b30; width: 20px; height: 20px; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.2);"></div>`,
-  iconSize: [20, 20],
-  iconAnchor: [10, 10],
+  html: `<div style="background-color: #ef4444; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);"></div>`,
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
 });
 
 interface TransportMapProps {
@@ -42,10 +42,10 @@ function ChangeView({ center, origin, destination, selectedRoutePath }: { center
   useEffect(() => {
     if (selectedRoutePath && selectedRoutePath.length > 0) {
       const bounds = L.latLngBounds(selectedRoutePath);
-      map.fitBounds(bounds, { padding: [100, 100] });
+      map.fitBounds(bounds, { padding: [50, 50] });
     } else if (origin && destination) {
       const bounds = L.latLngBounds([origin, destination]);
-      map.fitBounds(bounds, { padding: [100, 100] });
+      map.fitBounds(bounds, { padding: [50, 50] });
     } else {
       map.setView(center, map.getZoom());
     }
@@ -84,23 +84,25 @@ const TransportMap = ({ center, origin, destination, selectedRoutePath, onMapCli
           </Marker>
         )}
 
+        {/* Tracé de la ligne sélectionnée (Tram/Busway) */}
         {selectedRoutePath && (
           <Polyline 
             positions={selectedRoutePath} 
-            color="#00d66b" 
-            weight={8} 
-            opacity={0.9}
+            color="#10b981" 
+            weight={6} 
+            opacity={0.8}
             lineJoin="round"
           />
         )}
 
+        {/* Ligne pointillée si aucune route n'est sélectionnée */}
         {origin && destination && !selectedRoutePath && (
           <Polyline 
             positions={[origin, destination]} 
             color="#94a3b8" 
-            weight={4} 
-            opacity={0.4} 
-            dashArray="12, 12"
+            weight={3} 
+            opacity={0.5} 
+            dashArray="10, 10"
           />
         )}
       </MapContainer>

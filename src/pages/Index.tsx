@@ -5,7 +5,7 @@ import TransportMap from '@/components/TransportMap';
 import SearchPanel from '@/components/SearchPanel';
 import SuggestedRoutes from '@/components/SuggestedRoutes';
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { Navigation, Layers, LocateFixed } from 'lucide-react';
+import { Navigation, Layers } from 'lucide-react';
 import { showSuccess } from '@/utils/toast';
 
 const CASABLANCA_CENTER: [number, number] = [33.5731, -7.5898];
@@ -33,7 +33,7 @@ const Index = () => {
     } else {
       setDestination(latlng);
     }
-    setSelectedRoutePath(null);
+    setSelectedRoutePath(null); // Reset path when location changes
     showSuccess(`${type === 'origin' ? 'Départ' : 'Arrivée'} : ${name.split(',')[0]}`);
   };
 
@@ -41,6 +41,7 @@ const Index = () => {
     if (path) {
       setSelectedRoutePath(path);
     } else if (origin && destination) {
+      // Fallback to straight line if no specific path
       setSelectedRoutePath([origin, destination]);
     }
   };
@@ -53,9 +54,9 @@ const Index = () => {
   };
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-[#28a745] font-sans">
+    <div className="relative h-screen w-full overflow-hidden bg-gray-50 font-sans">
       {/* Map Background */}
-      <div className="absolute inset-0 z-0 opacity-90">
+      <div className="absolute inset-0 z-0">
         <TransportMap 
           center={mapCenter} 
           origin={origin} 
@@ -66,37 +67,50 @@ const Index = () => {
       </div>
 
       {/* Overlay UI */}
-      <div className="absolute inset-0 z-10 pointer-events-none flex flex-col p-4 md:p-8 overflow-y-auto no-scrollbar">
-        <div className="w-full max-w-md mx-auto space-y-4">
-          <SearchPanel 
-            origin={origin}
-            destination={destination}
-            onSelectLocation={handleSelectLocation}
-            onReset={handleReset}
-          />
+      <div className="absolute inset-0 z-10 pointer-events-none flex flex-col md:flex-row p-4 md:p-6 gap-6">
+        {/* Left Sidebar / Panel */}
+        <div className="w-full md:w-[400px] pointer-events-auto flex flex-col h-full max-h-[90vh] md:max-h-full">
+          <div className="flex-shrink-0">
+            <SearchPanel 
+              origin={origin}
+              destination={destination}
+              onSelectLocation={handleSelectLocation}
+              onReset={handleReset}
+            />
+          </div>
           
-          <SuggestedRoutes 
-            isVisible={!!(origin && destination)} 
-            onSelectRoute={handleSelectRoute}
-            selectedId={null}
-          />
+          <div className="flex-1 overflow-y-auto mt-2 no-scrollbar pb-20">
+            <SuggestedRoutes 
+              isVisible={!!(origin && destination)} 
+              onSelectRoute={handleSelectRoute}
+              selectedId={null} // On pourrait ajouter un état pour l'ID sélectionné
+            />
+          </div>
         </div>
 
         {/* Floating Action Buttons */}
-        <div className="fixed bottom-8 right-8 flex flex-col gap-4 pointer-events-auto">
+        <div className="absolute bottom-10 right-6 flex flex-col gap-3 pointer-events-auto">
+          <button 
+            className="w-12 h-12 bg-white rounded-2xl shadow-xl flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-all active:scale-95 border border-gray-100"
+            title="Changer de vue"
+          >
+            <Layers size={20} />
+          </button>
           <button 
             onClick={() => origin && setMapCenter(origin)}
-            className="w-14 h-14 bg-white rounded-full shadow-2xl flex items-center justify-center text-[#28a745] hover:scale-110 transition-all active:scale-95 border-4 border-white"
+            className="w-12 h-12 bg-white rounded-2xl shadow-xl flex items-center justify-center text-emerald-600 hover:bg-emerald-50 transition-all active:scale-95 border border-gray-100"
+            title="Centrer sur le départ"
           >
-            <LocateFixed size={28} />
+            <Navigation size={20} />
           </button>
         </div>
       </div>
 
       {/* Branding Footer */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-        <div className="bg-black/20 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10">
-          <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">CasaWay • Citymapper Style</span>
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+        <div className="bg-white/90 backdrop-blur-md px-6 py-2 rounded-2xl shadow-2xl border border-white/50 flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-[11px] font-black text-gray-800 uppercase tracking-[0.3em]">Casablanca Transport</span>
         </div>
       </div>
       
