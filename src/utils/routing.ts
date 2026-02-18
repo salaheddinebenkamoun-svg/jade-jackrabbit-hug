@@ -113,9 +113,9 @@ export const getRouteByOption = async (
     t4: { amp: 0.0005, phase: 2.8 },
     bw1: { amp: 0.00035, phase: 0.8 },
     bw2: { amp: 0.0003, phase: 2.2 },
-    bus_a: { amp: 0.00065, phase: 0.3 },
-    bus_b: { amp: 0.00075, phase: 1.8 },
-    bus_c: { amp: 0.0007, phase: 2.6 },
+    bus_lissasfa_nations_unies: { amp: 0.00065, phase: 0.3 },
+    bus_hay_hassani_ain_sebaa: { amp: 0.00075, phase: 1.8 },
+    bus_sidi_moumen_oulfa: { amp: 0.0007, phase: 2.6 },
   };
 
   const variant = offsets[optionId];
