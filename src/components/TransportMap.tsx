@@ -5,17 +5,6 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, ZoomContr
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Fix for default marker icons
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-
-const DefaultIcon = L.icon({
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
-
 const OriginIcon = L.divIcon({
   className: 'custom-div-icon',
   html: `<div style="background-color: #3b82f6; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);"></div>`,
@@ -30,12 +19,11 @@ const DestinationIcon = L.divIcon({
   iconAnchor: [8, 8],
 });
 
-L.Marker.prototype.options.icon = DefaultIcon;
-
 interface TransportMapProps {
   center: [number, number];
   origin: [number, number] | null;
   destination: [number, number] | null;
+  selectedRoutePath: [number, number][] | null;
   onMapClick: (latlng: [number, number]) => void;
 }
 
@@ -48,22 +36,25 @@ function MapEvents({ onMapClick }: { onMapClick: (latlng: [number, number]) => v
   return null;
 }
 
-function ChangeView({ center, origin, destination }: { center: [number, number], origin: any, destination: any }) {
+function ChangeView({ center, origin, destination, selectedRoutePath }: { center: [number, number], origin: any, destination: any, selectedRoutePath: any }) {
   const map = useMap();
   
   useEffect(() => {
-    if (origin && destination) {
+    if (selectedRoutePath && selectedRoutePath.length > 0) {
+      const bounds = L.latLngBounds(selectedRoutePath);
+      map.fitBounds(bounds, { padding: [50, 50] });
+    } else if (origin && destination) {
       const bounds = L.latLngBounds([origin, destination]);
       map.fitBounds(bounds, { padding: [50, 50] });
     } else {
       map.setView(center, map.getZoom());
     }
-  }, [center, origin, destination, map]);
+  }, [center, origin, destination, selectedRoutePath, map]);
   
   return null;
 }
 
-const TransportMap = ({ center, origin, destination, onMapClick }: TransportMapProps) => {
+const TransportMap = ({ center, origin, destination, selectedRoutePath, onMapClick }: TransportMapProps) => {
   return (
     <div className="h-full w-full relative z-0">
       <MapContainer 
@@ -78,7 +69,7 @@ const TransportMap = ({ center, origin, destination, onMapClick }: TransportMapP
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <ZoomControl position="bottomright" />
-        <ChangeView center={center} origin={origin} destination={destination} />
+        <ChangeView center={center} origin={origin} destination={destination} selectedRoutePath={selectedRoutePath} />
         <MapEvents onMapClick={onMapClick} />
         
         {origin && (
@@ -93,12 +84,24 @@ const TransportMap = ({ center, origin, destination, onMapClick }: TransportMapP
           </Marker>
         )}
 
-        {origin && destination && (
+        {/* Tracé de la ligne sélectionnée (Tram/Busway) */}
+        {selectedRoutePath && (
+          <Polyline 
+            positions={selectedRoutePath} 
+            color="#10b981" 
+            weight={6} 
+            opacity={0.8}
+            lineJoin="round"
+          />
+        )}
+
+        {/* Ligne pointillée si aucune route n'est sélectionnée */}
+        {origin && destination && !selectedRoutePath && (
           <Polyline 
             positions={[origin, destination]} 
-            color="#10b981" 
-            weight={4} 
-            opacity={0.6} 
+            color="#94a3b8" 
+            weight={3} 
+            opacity={0.5} 
             dashArray="10, 10"
           />
         )}

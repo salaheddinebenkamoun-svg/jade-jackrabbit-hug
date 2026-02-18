@@ -14,6 +14,7 @@ const Index = () => {
   const [origin, setOrigin] = useState<[number, number] | null>(null);
   const [destination, setDestination] = useState<[number, number] | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>(CASABLANCA_CENTER);
+  const [selectedRoutePath, setSelectedRoutePath] = useState<[number, number][] | null>(null);
 
   const handleMapClick = (latlng: [number, number]) => {
     if (!origin) {
@@ -32,12 +33,23 @@ const Index = () => {
     } else {
       setDestination(latlng);
     }
+    setSelectedRoutePath(null); // Reset path when location changes
     showSuccess(`${type === 'origin' ? 'Départ' : 'Arrivée'} : ${name.split(',')[0]}`);
+  };
+
+  const handleSelectRoute = (path: [number, number][] | null) => {
+    if (path) {
+      setSelectedRoutePath(path);
+    } else if (origin && destination) {
+      // Fallback to straight line if no specific path
+      setSelectedRoutePath([origin, destination]);
+    }
   };
 
   const handleReset = () => {
     setOrigin(null);
     setDestination(null);
+    setSelectedRoutePath(null);
     setMapCenter(CASABLANCA_CENTER);
   };
 
@@ -49,6 +61,7 @@ const Index = () => {
           center={mapCenter} 
           origin={origin} 
           destination={destination} 
+          selectedRoutePath={selectedRoutePath}
           onMapClick={handleMapClick}
         />
       </div>
@@ -67,7 +80,11 @@ const Index = () => {
           </div>
           
           <div className="flex-1 overflow-y-auto mt-2 no-scrollbar pb-20">
-            <SuggestedRoutes isVisible={!!(origin && destination)} />
+            <SuggestedRoutes 
+              isVisible={!!(origin && destination)} 
+              onSelectRoute={handleSelectRoute}
+              selectedId={null} // On pourrait ajouter un état pour l'ID sélectionné
+            />
           </div>
         </div>
 
