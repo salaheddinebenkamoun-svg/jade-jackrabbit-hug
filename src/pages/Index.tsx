@@ -41,13 +41,9 @@ const Index = () => {
           car: { duration: car.duration },
           public: { duration: pub.duration }
         });
-
-        // Default to the most logical "fastest" or standard option (Car)
-        if (!selectedRouteId) {
-          setRoutePath(car.path);
-          setPathColor("#ef4444");
-          setSelectedRouteId('car');
-        }
+        
+        // We no longer automatically set a default route here.
+        // The user must click an option to see the path on the map.
       }
     };
     updateStats();
@@ -72,6 +68,7 @@ const Index = () => {
       setDestination(latlng);
       setDestinationName(name.split(',')[0]);
     }
+    // Reset selection when locations change
     setSelectedRouteId(null);
     setRoutePath(null);
   };
