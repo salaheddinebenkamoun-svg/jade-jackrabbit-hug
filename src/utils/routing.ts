@@ -25,23 +25,22 @@ export const getRealRoute = async (
     };
     const osrmProfile = osrmProfileByMode[profile];
 
-
     const url = `https://router.project-osrm.org/route/v1/${osrmProfile}/${origin[1]},${origin[0]};${destination[1]},${destination[0]}?overview=full&geometries=geojson`;
-    
+
     const response = await fetch(url);
     const data = await response.json();
 
-      if (data.code !== 'Ok' || !Array.isArray(data.routes) || data.routes.length === 0) {
+    if (data.code !== 'Ok' || !Array.isArray(data.routes) || data.routes.length === 0) {
       throw new Error('Route not found');
     }
 
     const route = data.routes[0];
     const path = route.geometry.coordinates.map((coord: [number, number]) => [coord[1], coord[0]]);
-    
+
     // Base duration from OSRM is in seconds
     let durationMinutes = route.duration / 60;
     const distanceKm = route.distance / 1000;
-    
+
     /**
      * LOGICAL CALIBRATION FOR CASABLANCA
      * 1. Walking: ~4-5 km/h (OSRM base is usually okay, but we add 10% for lights/crowds)
@@ -49,7 +48,7 @@ export const getRealRoute = async (
      * 3. Car: Highly variable. We add a heavy traffic multiplier (1.6x) + 5 mins for parking/start.
      * 4. Public: Tram/Busway have dedicated lanes but stops. We use car base + 1.2x + 8 mins wait.
      */
-    
+
     if (profile === 'foot') {
       const calibrated = durationMinutes * 1.1;
       const realisticMinimum = (distanceKm / 5) * 60;
@@ -61,7 +60,7 @@ export const getRealRoute = async (
     } else if (profile === 'taxi' || profile === 'car') {
       // In Casa, short trips take longer due to traffic density.
       const trafficFactor = distanceKm < 3 ? 2.2 : 1.6;
-      durationMinutes = (durationMinutes * trafficFactor) + 4; 
+      durationMinutes = (durationMinutes * trafficFactor) + 4;
     } else if (profile === 'tramway') {
       // Frequent stops + average waiting time, but often less affected by traffic.
       durationMinutes = (durationMinutes * 1.05) + 7;
@@ -72,7 +71,7 @@ export const getRealRoute = async (
       // More stops, mixed traffic, extra waiting variability.
       durationMinutes = (durationMinutes * 1.4) + 8;
     }
-    
+
     return {
       path,
       duration: Math.max(1, Math.round(durationMinutes)),
@@ -88,13 +87,28 @@ export const getRealRoute = async (
   }
 };
 
+const applyOffsetToPath = (
+  path: [number, number][],
+  amplitude: number,
+  phase = 0
+): [number, number][] => {
+  if (path.length < 3 || amplitude === 0) return path;
+
+  return path.map(([lat, lng], index) => {
+    if (index === 0 || index === path.length - 1) return [lat, lng];
+    const wave = Math.sin((index / (path.length - 1)) * Math.PI * 2 + phase);
+    const offset = wave * amplitude;
+    return [lat + offset, lng - offset * 0.65];
+  });
+};
+
 /**
  * Returns the route for a selected option while keeping real road-aligned geometry.
  */
 export const getRouteByOption = async (
   origin: [number, number],
   destination: [number, number],
-  _optionId: string,
+  optionId: string,
   mode: Exclude<RoutingProfile, 'car'>
 ): Promise<{ path: [number, number][], duration: number, distance: number }> => {
   const result = await getRealRoute(origin, destination, mode);
@@ -121,3 +135,4 @@ export const getRouteByOption = async (
     ...result,
     path: applyOffsetToPath(result.path, variant.amp, variant.phase),
   };
+};
