@@ -24,6 +24,7 @@ interface TransportMapProps {
   origin: [number, number] | null;
   destination: [number, number] | null;
   selectedRoutePath: [number, number][] | null;
+  pathColor?: string;
   onMapClick: (latlng: [number, number]) => void;
 }
 
@@ -54,7 +55,7 @@ function ChangeView({ center, origin, destination, selectedRoutePath }: { center
   return null;
 }
 
-const TransportMap = ({ center, origin, destination, selectedRoutePath, onMapClick }: TransportMapProps) => {
+const TransportMap = ({ center, origin, destination, selectedRoutePath, pathColor = "#10b981", onMapClick }: TransportMapProps) => {
   return (
     <div className="h-full w-full relative z-0">
       <MapContainer 
@@ -84,18 +85,16 @@ const TransportMap = ({ center, origin, destination, selectedRoutePath, onMapCli
           </Marker>
         )}
 
-        {/* Tracé de la ligne sélectionnée (Tram/Busway) */}
         {selectedRoutePath && (
           <Polyline 
             positions={selectedRoutePath} 
-            color="#10b981" 
+            color={pathColor} 
             weight={6} 
             opacity={0.8}
             lineJoin="round"
           />
         )}
 
-        {/* Ligne pointillée si aucune route n'est sélectionnée */}
         {origin && destination && !selectedRoutePath && (
           <Polyline 
             positions={[origin, destination]} 

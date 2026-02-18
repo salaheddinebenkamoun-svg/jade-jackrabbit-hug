@@ -8,10 +8,11 @@ interface SearchPanelProps {
   originName: string;
   destinationName: string;
   onSelectLocation: (type: 'origin' | 'destination', latlng: [number, number], name: string) => void;
+  onSwap: () => void;
   onReset: () => void;
 }
 
-const SearchPanel = ({ originName, destinationName, onSelectLocation, onReset }: SearchPanelProps) => {
+const SearchPanel = ({ originName, destinationName, onSelectLocation, onSwap, onReset }: SearchPanelProps) => {
   const [queries, setQueries] = useState({ origin: originName, destination: destinationName });
   const [suggestions, setSuggestions] = useState<{ type: 'origin' | 'destination', items: any[] } | null>(null);
 
@@ -73,8 +74,11 @@ const SearchPanel = ({ originName, destinationName, onSelectLocation, onReset }:
           </div>
         </div>
 
-        <button className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 border border-gray-100 shadow-sm">
-          <ArrowUpDown size={16} />
+        <button 
+          onClick={onSwap}
+          className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full flex items-center justify-center text-emerald-600 border border-gray-100 shadow-lg hover:scale-110 transition-transform active:rotate-180 duration-300"
+        >
+          <ArrowUpDown size={20} />
         </button>
 
         {suggestions && suggestions.items.length > 0 && (

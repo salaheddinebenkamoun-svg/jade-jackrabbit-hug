@@ -5,17 +5,17 @@ import { Train, Bus, Zap, ChevronRight, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TRANSPORT_OPTIONS = [
-  { id: 't1', type: 'Tramway', line: 'T1', color: 'bg-emerald-500', text: 'text-emerald-500', duration: '24 min', price: '6 MAD', steps: ['Marche 3 min', 'T1', 'Marche 2 min'] },
-  { id: 't2', type: 'Tramway', line: 'T2', color: 'bg-orange-500', text: 'text-orange-500', duration: '31 min', price: '6 MAD', steps: ['Marche 5 min', 'T2', 'Marche 4 min'] },
-  { id: 'bw1', type: 'Busway', line: 'BW1', color: 'bg-blue-500', text: 'text-blue-500', duration: '28 min', price: '6 MAD', steps: ['Marche 2 min', 'BW1', 'Marche 6 min'] },
-  { id: 'bw2', type: 'Busway', line: 'BW2', color: 'bg-purple-500', text: 'text-purple-500', duration: '35 min', price: '6 MAD', steps: ['Marche 8 min', 'BW2', 'Marche 3 min'] },
-  { id: 'bus', type: 'Bus', line: 'L97', color: 'bg-rose-500', text: 'text-rose-500', duration: '45 min', price: '5 MAD', steps: ['Marche 1 min', 'Bus 97', 'Marche 10 min'] },
+  { id: 't1', type: 'Tramway', line: 'T1', color: 'bg-emerald-500', hex: '#10b981', duration: '24 min', price: '6 MAD', steps: ['Marche 3 min', 'T1', 'Marche 2 min'] },
+  { id: 't2', type: 'Tramway', line: 'T2', color: 'bg-orange-500', hex: '#f97316', duration: '31 min', price: '6 MAD', steps: ['Marche 5 min', 'T2', 'Marche 4 min'] },
+  { id: 'bw1', type: 'Busway', line: 'BW1', color: 'bg-blue-500', hex: '#3b82f6', duration: '28 min', price: '6 MAD', steps: ['Marche 2 min', 'BW1', 'Marche 6 min'] },
+  { id: 'bw2', type: 'Busway', line: 'BW2', color: 'bg-purple-500', hex: '#a855f7', duration: '35 min', price: '6 MAD', steps: ['Marche 8 min', 'BW2', 'Marche 3 min'] },
+  { id: 'bus', type: 'Bus', line: 'L97', color: 'bg-rose-500', hex: '#f43f5e', duration: '45 min', price: '5 MAD', steps: ['Marche 1 min', 'Bus 97', 'Marche 10 min'] },
 ];
 
 interface SuggestedRoutesProps {
   isVisible: boolean;
   selectedId: string | null;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, color: string) => void;
 }
 
 const SuggestedRoutes = ({ isVisible, selectedId, onSelect }: SuggestedRoutesProps) => {
@@ -27,7 +27,7 @@ const SuggestedRoutes = ({ isVisible, selectedId, onSelect }: SuggestedRoutesPro
       {TRANSPORT_OPTIONS.map((opt) => (
         <div
           key={opt.id}
-          onClick={() => onSelect(opt.id)}
+          onClick={() => onSelect(opt.id, opt.hex)}
           className={cn(
             "bg-white p-4 rounded-2xl border transition-all cursor-pointer active:scale-[0.98]",
             selectedId === opt.id ? "border-emerald-500 ring-4 ring-emerald-500/10 shadow-xl" : "border-gray-100 shadow-sm hover:shadow-md"

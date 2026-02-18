@@ -18,17 +18,23 @@ const Index = () => {
   const [selectedMode, setSelectedMode] = useState<'foot' | 'bike' | 'car'>('car');
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [routePath, setRoutePath] = useState<[number, number][] | null>(null);
+  const [pathColor, setPathColor] = useState("#10b981");
   const [modeStats, setModeStats] = useState({
-    foot: { duration: 32, extra: '131 cal' },
-    bike: { duration: 17, extra: '71 cal' },
-    car: { duration: 13, extra: 'Cab' }
+    foot: { duration: 0, extra: '0 cal' },
+    bike: { duration: 0, extra: '0 cal' },
+    car: { duration: 0, extra: 'Cab' }
   });
 
   const updateRealRoute = async (start: [number, number], end: [number, number], mode: 'foot' | 'bike' | 'car') => {
     const result = await getRealRoute(start, end, mode);
     setRoutePath(result.path);
     
-    // Update stats for all modes to show in selector
+    // Set color based on mode
+    if (mode === 'foot') setPathColor("#10b981");
+    else if (mode === 'bike') setPathColor("#3b82f6");
+    else setPathColor("#64748b");
+
+    // Update stats for all modes
     const foot = await getRealRoute(start, end, 'foot');
     const bike = await getRealRoute(start, end, 'bike');
     const car = await getRealRoute(start, end, 'car');
@@ -41,10 +47,10 @@ const Index = () => {
   };
 
   useEffect(() => {
-    if (origin && destination) {
+    if (origin && destination && !selectedRouteId) {
       updateRealRoute(origin, destination, selectedMode);
     }
-  }, [origin, destination, selectedMode]);
+  }, [origin, destination, selectedMode, selectedRouteId]);
 
   const handleMapClick = (latlng: [number, number]) => {
     if (!origin) {
@@ -53,7 +59,7 @@ const Index = () => {
     } else if (!destination) {
       setDestination(latlng);
       setDestinationName(`${latlng[0].toFixed(4)}, ${latlng[1].toFixed(4)}`);
-      showSuccess("Itinéraire calculé sur les rues réelles");
+      showSuccess("Itinéraire calculé");
     }
   };
 
@@ -66,6 +72,29 @@ const Index = () => {
       setDestinationName(name.split(',')[0]);
     }
     setSelectedRouteId(null);
+  };
+
+  const handleSwap = () => {
+    const tempOrigin = origin;
+    const tempOriginName = originName;
+    setOrigin(destination);
+    setOriginName(destinationName);
+    setDestination(tempOrigin);
+    setDestinationName(tempOriginName);
+    setSelectedRouteId(null);
+    showSuccess("Départ et arrivée inversés");
+  };
+
+  const handleSelectPublicTransport = async (id: string, color: string) => {
+    setSelectedRouteId(id);
+    setPathColor(color);
+    if (origin && destination) {
+      // For public transport, we use the 'car' route as a base for the map path
+      // but style it with the transport line's color
+      const result = await getRealRoute(origin, destination, 'car');
+      setRoutePath(result.path);
+      showSuccess(`Ligne ${id.toUpperCase()} sélectionnée`);
+    }
   };
 
   const handleReset = () => {
@@ -85,6 +114,7 @@ const Index = () => {
           origin={origin} 
           destination={destination} 
           selectedRoutePath={routePath}
+          pathColor={pathColor}
           onMapClick={handleMapClick}
         />
       </div>
@@ -94,6 +124,7 @@ const Index = () => {
           originName={originName}
           destinationName={destinationName}
           onSelectLocation={handleSelectLocation}
+          onSwap={handleSwap}
           onReset={handleReset}
         />
 
@@ -102,7 +133,10 @@ const Index = () => {
             {origin && destination && (
               <ModeSelector 
                 selectedMode={selectedMode}
-                onSelect={setSelectedMode}
+                onSelect={(mode) => {
+                  setSelectedMode(mode);
+                  setSelectedRouteId(null);
+                }}
                 options={[
                   { id: 'foot', label: 'Walk', icon: null, ...modeStats.foot },
                   { id: 'bike', label: 'Cycle', icon: null, ...modeStats.bike },
@@ -114,11 +148,7 @@ const Index = () => {
             <SuggestedRoutes 
               isVisible={!!(origin && destination)}
               selectedId={selectedRouteId}
-              onSelect={(id) => {
-                setSelectedRouteId(id);
-                // In a real app, we'd fetch the specific GTFS path here
-                showSuccess(`Ligne ${id.toUpperCase()} sélectionnée`);
-              }}
+              onSelect={handleSelectPublicTransport}
             />
           </div>
         </div>
