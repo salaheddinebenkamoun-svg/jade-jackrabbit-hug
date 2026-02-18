@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, ZoomControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -18,17 +18,16 @@ const DefaultIcon = L.icon({
 
 const OriginIcon = L.divIcon({
   className: 'custom-div-icon',
-  html: `<div style="background-color: #3b82f6; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.3);"></div>`,
-  iconSize: [12, 12],
-  iconAnchor: [6, 6],
+  html: `<div style="background-color: #3b82f6; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);"></div>`,
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
 });
 
-const DestinationIcon = L.icon({
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  className: 'hue-rotate-[140deg]' // Makes it red/pinkish
+const DestinationIcon = L.divIcon({
+  className: 'custom-div-icon',
+  html: `<div style="background-color: #ef4444; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);"></div>`,
+  iconSize: [16, 16],
+  iconAnchor: [8, 8],
 });
 
 L.Marker.prototype.options.icon = DefaultIcon;
@@ -37,17 +36,27 @@ interface TransportMapProps {
   center: [number, number];
   origin: [number, number] | null;
   destination: [number, number] | null;
+  onMapClick: (latlng: [number, number]) => void;
+}
+
+function MapEvents({ onMapClick }: { onMapClick: (latlng: [number, number]) => void }) {
+  useMapEvents({
+    click(e) {
+      onMapClick([e.latlng.lat, e.latlng.lng]);
+    },
+  });
+  return null;
 }
 
 function ChangeView({ center }: { center: [number, number] }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, 13);
+    map.setView(center, map.getZoom());
   }, [center, map]);
   return null;
 }
 
-const TransportMap = ({ center, origin, destination }: TransportMapProps) => {
+const TransportMap = ({ center, origin, destination, onMapClick }: TransportMapProps) => {
   return (
     <div className="h-full w-full relative z-0">
       <MapContainer 
@@ -63,16 +72,17 @@ const TransportMap = ({ center, origin, destination }: TransportMapProps) => {
         />
         <ZoomControl position="bottomright" />
         <ChangeView center={center} />
+        <MapEvents onMapClick={onMapClick} />
         
         {origin && (
           <Marker position={origin as L.LatLngExpression} icon={OriginIcon}>
-            <Popup>Point de départ</Popup>
+            <Popup>Départ</Popup>
           </Marker>
         )}
 
         {destination && (
           <Marker position={destination as L.LatLngExpression} icon={DestinationIcon}>
-            <Popup>Destination</Popup>
+            <Popup>Arrivée</Popup>
           </Marker>
         )}
       </MapContainer>

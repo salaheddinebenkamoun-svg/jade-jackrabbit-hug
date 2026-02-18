@@ -5,60 +5,41 @@ import TransportMap from '@/components/TransportMap';
 import SearchPanel from '@/components/SearchPanel';
 import SuggestedRoutes from '@/components/SuggestedRoutes';
 import { MadeWithDyad } from "@/components/made-with-dyad";
-import { MapPin, Navigation, Layers } from 'lucide-react';
-import { showSuccess, showError } from '@/utils/toast';
+import { Navigation, Layers } from 'lucide-react';
+import { showSuccess } from '@/utils/toast';
 
 const CASABLANCA_CENTER: [number, number] = [33.5731, -7.5898];
-
-// Mock coordinates for Casablanca locations
-const LOCATIONS: Record<string, [number, number]> = {
-  "Maarif": [33.5819, -7.6324],
-  "Sidi Moumen": [33.5867, -7.5317],
-  "Casa Voyageurs": [33.5892, -7.5975],
-  "Morocco Mall": [33.5883, -7.7058],
-  "Technopark": [33.5415, -7.6345]
-};
 
 const Index = () => {
   const [origin, setOrigin] = useState<[number, number] | null>(null);
   const [destination, setDestination] = useState<[number, number] | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>(CASABLANCA_CENTER);
-  const [isSearching, setIsSearching] = useState(false);
 
-  const handleSearch = (from: string, to: string) => {
-    // Simulate finding coordinates for the search terms
-    // In a real app, this would use a Geocoding API
-    const fromCoord = LOCATIONS[from] || [33.58, -7.60];
-    const toCoord = LOCATIONS[to] || [33.59, -7.55];
-    
-    setOrigin(fromCoord);
-    setDestination(toCoord);
-    setMapCenter(fromCoord);
-    setIsSearching(true);
-    showSuccess("Itinéraire calculé");
+  const handleMapClick = (latlng: [number, number]) => {
+    if (!origin) {
+      setOrigin(latlng);
+      showSuccess("Départ sélectionné");
+    } else if (!destination) {
+      setDestination(latlng);
+      showSuccess("Arrivée sélectionnée - Calcul de l'itinéraire...");
+    }
   };
 
-  const handleSelectCurrentLocation = () => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const loc: [number, number] = [position.coords.latitude, position.coords.longitude];
-          setOrigin(loc);
-          setMapCenter(loc);
-          showSuccess("Position actuelle sélectionnée comme départ");
-        },
-        (error) => {
-          showError("Impossible d'accéder à votre position");
-        }
-      );
-    }
+  const handleReset = () => {
+    setOrigin(null);
+    setDestination(null);
   };
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-gray-50 font-sans">
       {/* Map Background */}
       <div className="absolute inset-0 z-0">
-        <TransportMap center={mapCenter} origin={origin} destination={destination} />
+        <TransportMap 
+          center={mapCenter} 
+          origin={origin} 
+          destination={destination} 
+          onMapClick={handleMapClick}
+        />
       </div>
 
       {/* Overlay UI */}
@@ -67,13 +48,14 @@ const Index = () => {
         <div className="w-full md:w-[400px] pointer-events-auto flex flex-col h-full max-h-[90vh] md:max-h-full">
           <div className="flex-shrink-0">
             <SearchPanel 
-              onSearch={handleSearch} 
-              onSelectCurrentLocation={handleSelectCurrentLocation}
+              origin={origin}
+              destination={destination}
+              onReset={handleReset}
             />
           </div>
           
           <div className="flex-1 overflow-y-auto mt-2 no-scrollbar pb-20">
-            <SuggestedRoutes isVisible={isSearching} />
+            <SuggestedRoutes isVisible={!!(origin && destination)} />
           </div>
         </div>
 

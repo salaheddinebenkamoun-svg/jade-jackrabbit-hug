@@ -1,75 +1,60 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Search, MapPin, Navigation, ArrowRightLeft, Train, Bus, Zap } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React from 'react';
+import { MapPin, Navigation, Train, Bus, Zap, X, MousePointer2 } from 'lucide-react';
 
 interface SearchPanelProps {
-  onSearch: (from: string, to: string) => void;
-  onSelectCurrentLocation: () => void;
+  origin: [number, number] | null;
+  destination: [number, number] | null;
+  onReset: () => void;
 }
 
-const SearchPanel = ({ onSearch, onSelectCurrentLocation }: SearchPanelProps) => {
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-
-  const handleSearch = () => {
-    if (from && to) {
-      onSearch(from, to);
-    }
-  };
+const SearchPanel = ({ origin, destination, onReset }: SearchPanelProps) => {
+  const isReady = origin && destination;
 
   return (
     <div className="bg-white rounded-2xl shadow-xl p-5 w-full max-w-md mx-auto border border-gray-100 pointer-events-auto">
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-xl font-extrabold text-emerald-600 tracking-tight">Casablanca</h2>
-        <div className="flex gap-2">
+        {(origin || destination) && (
           <button 
-            onClick={onSelectCurrentLocation}
-            className="p-2 hover:bg-emerald-50 rounded-full transition-colors text-emerald-600"
-            title="Utiliser ma position"
+            onClick={onReset}
+            className="p-2 hover:bg-red-50 rounded-full transition-colors text-red-500"
+            title="Réinitialiser"
           >
-            <Navigation size={18} />
+            <X size={18} />
           </button>
-        </div>
+        )}
       </div>
 
-      <div className="space-y-3 relative">
-        {/* Vertical line connecting dots */}
-        <div className="absolute left-[15px] top-6 bottom-6 w-0.5 bg-gray-100 z-0" />
-        
-        <div className="relative z-10">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-blue-500 border-2 border-white shadow-sm" />
-          <input
-            type="text"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-            placeholder="Point de départ"
-            className="w-full pl-10 pr-4 py-3.5 bg-gray-50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-gray-400"
-          />
-        </div>
-
-        <div className="relative z-10">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2">
-            <MapPin size={16} className="text-red-500" />
+      <div className="space-y-4">
+        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-transparent transition-all">
+          <div className={`w-3 h-3 rounded-full border-2 border-white shadow-sm ${origin ? 'bg-blue-500' : 'bg-gray-300 animate-pulse'}`} />
+          <div className="flex-1">
+            <p className="text-[10px] font-bold text-gray-400 uppercase">Départ</p>
+            <p className="text-sm font-medium text-gray-700">
+              {origin ? `${origin[0].toFixed(4)}, ${origin[1].toFixed(4)}` : "Cliquez sur la carte pour choisir"}
+            </p>
           </div>
-          <input
-            type="text"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            placeholder="Où allez-vous ?"
-            className="w-full pl-10 pr-4 py-3.5 bg-gray-50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-gray-400"
-          />
+        </div>
+
+        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-transparent transition-all">
+          <MapPin size={16} className={destination ? 'text-red-500' : 'text-gray-300'} />
+          <div className="flex-1">
+            <p className="text-[10px] font-bold text-gray-400 uppercase">Arrivée</p>
+            <p className="text-sm font-medium text-gray-700">
+              {destination ? `${destination[0].toFixed(4)}, ${destination[1].toFixed(4)}` : origin ? "Cliquez pour choisir l'arrivée" : "En attente du départ..."}
+            </p>
+          </div>
         </div>
       </div>
 
-      <button 
-        onClick={handleSearch}
-        disabled={!from || !to}
-        className="w-full mt-4 py-3.5 bg-emerald-600 text-white rounded-xl font-bold text-sm hover:bg-emerald-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none shadow-lg shadow-emerald-200"
-      >
-        Rechercher l'itinéraire
-      </button>
+      {!isReady && (
+        <div className="mt-4 flex items-center justify-center gap-2 text-emerald-600 bg-emerald-50 py-2 rounded-lg border border-emerald-100">
+          <MousePointer2 size={14} className="animate-bounce" />
+          <span className="text-[11px] font-bold uppercase tracking-wider">Sélectionnez sur la carte</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-2 mt-6">
         <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-emerald-50/50 border border-emerald-100">
