@@ -21,13 +21,24 @@ const Index = () => {
       showSuccess("Départ sélectionné");
     } else if (!destination) {
       setDestination(latlng);
-      showSuccess("Arrivée sélectionnée - Calcul de l'itinéraire...");
+      showSuccess("Itinéraire calculé");
     }
+  };
+
+  const handleSelectLocation = (type: 'origin' | 'destination', latlng: [number, number], name: string) => {
+    if (type === 'origin') {
+      setOrigin(latlng);
+      setMapCenter(latlng);
+    } else {
+      setDestination(latlng);
+    }
+    showSuccess(`${type === 'origin' ? 'Départ' : 'Arrivée'} : ${name.split(',')[0]}`);
   };
 
   const handleReset = () => {
     setOrigin(null);
     setDestination(null);
+    setMapCenter(CASABLANCA_CENTER);
   };
 
   return (
@@ -50,6 +61,7 @@ const Index = () => {
             <SearchPanel 
               origin={origin}
               destination={destination}
+              onSelectLocation={handleSelectLocation}
               onReset={handleReset}
             />
           </div>
