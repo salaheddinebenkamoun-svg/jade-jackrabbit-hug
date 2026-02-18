@@ -6,11 +6,12 @@
 export const getRealRoute = async (
   origin: [number, number],
   destination: [number, number],
-  profile: 'foot' | 'bike' | 'car' | 'public' = 'car'
+  profile: 'foot' | 'bike' | 'taxi' | 'tramway' | 'busway' | 'bus' | 'car' = 'car'
 ): Promise<{ path: [number, number][], duration: number, distance: number }> => {
   try {
-    // Map our internal modes to OSRM profiles
-    // OSRM 'driving' is used for both car and public transport as a base
+    // Map our internal modes to OSRM profiles.
+    // OSRM does not expose dedicated tram/busway lanes worldwide, so we use driving
+    // geometry and calibrate ETA per mode to feel closer to real-life conditions.
     const osrmProfile = 
       profile === 'foot' ? 'foot' : 
       profile === 'bike' ? 'bicycle' : 
@@ -42,13 +43,19 @@ export const getRealRoute = async (
       durationMinutes = durationMinutes * 1.1;
     } else if (profile === 'bike') {
       durationMinutes = durationMinutes * 1.15;
-    } else if (profile === 'car') {
-      // In Casa, short trips take longer due to traffic density
+    } else if (profile === 'taxi' || profile === 'car') {
+      // In Casa, short trips take longer due to traffic density.
       const trafficFactor = distanceKm < 3 ? 2.2 : 1.6;
       durationMinutes = (durationMinutes * trafficFactor) + 4; 
-    } else if (profile === 'public') {
-      // Tram/Busway is often faster than cars in peak traffic due to dedicated lanes
-      durationMinutes = (durationMinutes * 1.1) + 8; // 8 mins average wait time
+    } else if (profile === 'tramway') {
+      // Frequent stops + average waiting time, but often less affected by traffic.
+      durationMinutes = (durationMinutes * 1.05) + 7;
+    } else if (profile === 'busway') {
+      // Dedicated corridors help compared to regular buses.
+      durationMinutes = (durationMinutes * 1.15) + 6;
+    } else if (profile === 'bus') {
+      // More stops, mixed traffic, extra waiting variability.
+      durationMinutes = (durationMinutes * 1.4) + 8;
     }
     
     return {
