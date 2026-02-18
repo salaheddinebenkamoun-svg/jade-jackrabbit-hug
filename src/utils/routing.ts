@@ -2,6 +2,55 @@
 
 type RoutingProfile = 'foot' | 'bike' | 'taxi' | 'tramway' | 'busway' | 'bus' | 'car';
 
+type RouteResult = { path: [number, number][], duration: number, distance: number };
+
+const OSRM_PROFILE_BY_MODE: Record<RoutingProfile, 'walking' | 'cycling' | 'driving'> = {
+  foot: 'walking',
+  bike: 'cycling',
+  taxi: 'driving',
+  tramway: 'driving',
+  busway: 'driving',
+  bus: 'driving',
+  car: 'driving',
+};
+
+interface OsrmRoute {
+  duration: number;
+  distance: number;
+  geometry: {
+    coordinates: [number, number][];
+  };
+}
+
+const decodeRoute = (route: OsrmRoute): RouteResult => {
+  const path = route.geometry.coordinates.map((coord: [number, number]) => [coord[1], coord[0]]);
+  const distanceKm = route.distance / 1000;
+
+  return {
+    path,
+    duration: route.duration / 60,
+    distance: distanceKm,
+  };
+};
+
+const fetchRoute = async (
+  points: [number, number][],
+  profile: 'walking' | 'cycling' | 'driving',
+  alternatives = false
+): Promise<RouteResult[]> => {
+  const coords = points.map(([lat, lng]) => `${lng},${lat}`).join(';');
+  const url = `https://router.project-osrm.org/route/v1/${profile}/${coords}?overview=full&geometries=geojson&alternatives=${alternatives ? 'true' : 'false'}`;
+
+  const response = await fetch(url);
+  const data = await response.json();
+
+  if (data.code !== 'Ok' || !Array.isArray(data.routes) || data.routes.length === 0) {
+    throw new Error('Route not found');
+  }
+
+  return data.routes.map(decodeRoute);
+};
+
 /**
  * Fetches a real street-following route from OSRM API with mode-specific profiles
  */
@@ -9,37 +58,13 @@ export const getRealRoute = async (
   origin: [number, number],
   destination: [number, number],
   profile: RoutingProfile = 'car'
-): Promise<{ path: [number, number][], duration: number, distance: number }> => {
+): Promise<RouteResult> => {
   try {
-    // Map our internal modes to OSRM profiles.
-    // OSRM does not expose dedicated tram/busway lanes worldwide, so we use driving
-    // geometry and calibrate ETA per mode to feel closer to real-life conditions.
-    const osrmProfileByMode: Record<RoutingProfile, 'walking' | 'cycling' | 'driving'> = {
-      foot: 'walking',
-      bike: 'cycling',
-      taxi: 'driving',
-      tramway: 'driving',
-      busway: 'driving',
-      bus: 'driving',
-      car: 'driving',
-    };
-    const osrmProfile = osrmProfileByMode[profile];
+    const osrmProfile = OSRM_PROFILE_BY_MODE[profile];
+    const [route] = await fetchRoute([origin, destination], osrmProfile);
 
-    const url = `https://router.project-osrm.org/route/v1/${osrmProfile}/${origin[1]},${origin[0]};${destination[1]},${destination[0]}?overview=full&geometries=geojson`;
-
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (data.code !== 'Ok' || !Array.isArray(data.routes) || data.routes.length === 0) {
-      throw new Error('Route not found');
-    }
-
-    const route = data.routes[0];
-    const path = route.geometry.coordinates.map((coord: [number, number]) => [coord[1], coord[0]]);
-
-    // Base duration from OSRM is in seconds
-    let durationMinutes = route.duration / 60;
-    const distanceKm = route.distance / 1000;
+    let durationMinutes = route.duration;
+    const distanceKm = route.distance;
 
     /**
      * LOGICAL CALIBRATION FOR CASABLANCA
@@ -73,7 +98,7 @@ export const getRealRoute = async (
     }
 
     return {
-      path,
+      path: route.path,
       duration: Math.max(1, Math.round(durationMinutes)),
       distance: parseFloat(distanceKm.toFixed(1))
     };
@@ -87,19 +112,27 @@ export const getRealRoute = async (
   }
 };
 
-const applyOffsetToPath = (
-  path: [number, number][],
-  amplitude: number,
-  phase = 0
-): [number, number][] => {
-  if (path.length < 3 || amplitude === 0) return path;
+const createViaPoint = (
+  origin: [number, number],
+  destination: [number, number],
+  lateralOffset: number
+): [number, number] => {
+  const [lat1, lng1] = origin;
+  const [lat2, lng2] = destination;
 
-  return path.map(([lat, lng], index) => {
-    if (index === 0 || index === path.length - 1) return [lat, lng];
-    const wave = Math.sin((index / (path.length - 1)) * Math.PI * 2 + phase);
-    const offset = wave * amplitude;
-    return [lat + offset, lng - offset * 0.65];
-  });
+  const midLat = (lat1 + lat2) / 2;
+  const midLng = (lng1 + lng2) / 2;
+  const dLat = lat2 - lat1;
+  const dLng = lng2 - lng1;
+  const norm = Math.sqrt((dLat * dLat) + (dLng * dLng)) || 1;
+
+  const perpendicularLat = -dLng / norm;
+  const perpendicularLng = dLat / norm;
+
+  return [
+    midLat + (perpendicularLat * lateralOffset),
+    midLng + (perpendicularLng * lateralOffset),
+  ];
 };
 
 /**
@@ -110,29 +143,50 @@ export const getRouteByOption = async (
   destination: [number, number],
   optionId: string,
   mode: Exclude<RoutingProfile, 'car'>
-): Promise<{ path: [number, number][], duration: number, distance: number }> => {
-  const result = await getRealRoute(origin, destination, mode);
+): Promise<RouteResult> => {
+  if (mode === 'foot' || mode === 'bike' || mode === 'taxi') {
+    return getRealRoute(origin, destination, mode);
+  }
 
-  const offsets: Record<string, { amp: number; phase: number }> = {
-    foot: { amp: 0.0001, phase: 0 },
-    bike: { amp: 0.00015, phase: 0.6 },
-    taxi: { amp: 0.0002, phase: 0.9 },
-    t1: { amp: 0.00045, phase: 0 },
-    t2: { amp: 0.00055, phase: 1.3 },
-    t3: { amp: 0.0004, phase: 2.1 },
-    t4: { amp: 0.0005, phase: 2.8 },
-    bw1: { amp: 0.00035, phase: 0.8 },
-    bw2: { amp: 0.0003, phase: 2.2 },
-    bus_lissasfa_nations_unies: { amp: 0.00065, phase: 0.3 },
-    bus_hay_hassani_ain_sebaa: { amp: 0.00075, phase: 1.8 },
-    bus_sidi_moumen_oulfa: { amp: 0.0007, phase: 2.6 },
+  const variants: Record<string, { lateralOffset: number; alternativeIndex: number }> = {
+    t1: { lateralOffset: 0.015, alternativeIndex: 0 },
+    t2: { lateralOffset: -0.018, alternativeIndex: 1 },
+    t3: { lateralOffset: 0.022, alternativeIndex: 2 },
+    t4: { lateralOffset: -0.025, alternativeIndex: 0 },
+    bw1: { lateralOffset: 0.012, alternativeIndex: 1 },
+    bw2: { lateralOffset: -0.012, alternativeIndex: 2 },
+    bus_lissasfa_nations_unies: { lateralOffset: 0.03, alternativeIndex: 0 },
+    bus_hay_hassani_ain_sebaa: { lateralOffset: -0.034, alternativeIndex: 1 },
+    bus_sidi_moumen_oulfa: { lateralOffset: 0.038, alternativeIndex: 2 },
   };
 
-  const variant = offsets[optionId];
-  if (!variant) return result;
+  const variant = variants[optionId];
+  if (!variant) {
+    return getRealRoute(origin, destination, mode);
+  }
 
-  return {
-    ...result,
-    path: applyOffsetToPath(result.path, variant.amp, variant.phase),
-  };
+  try {
+    const viaPoint = createViaPoint(origin, destination, variant.lateralOffset);
+    const [route] = await fetchRoute([origin, viaPoint, destination], 'driving');
+    return {
+      path: route.path,
+      duration: Math.max(1, Math.round(route.duration)),
+      distance: parseFloat(route.distance.toFixed(1)),
+    };
+  } catch (error) {
+    console.warn(`Could not compute waypoint route for ${optionId}, trying alternatives`, error);
+  }
+
+  try {
+    const alternatives = await fetchRoute([origin, destination], 'driving', true);
+    const pickedRoute = alternatives[variant.alternativeIndex % alternatives.length] ?? alternatives[0];
+    return {
+      path: pickedRoute.path,
+      duration: Math.max(1, Math.round(pickedRoute.duration)),
+      distance: parseFloat(pickedRoute.distance.toFixed(1)),
+    };
+  } catch (error) {
+    console.warn(`Could not compute alternative route for ${optionId}, using default mode route`, error);
+    return getRealRoute(origin, destination, mode);
+  }
 };
