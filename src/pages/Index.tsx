@@ -20,26 +20,29 @@ const Index = () => {
   const [modeStats, setModeStats] = useState({
     foot: { duration: 0 },
     bike: { duration: 0 },
-    car: { duration: 0 }
+    car: { duration: 0 },
+    public: { duration: 0 }
   });
 
   // Update base stats when origin/destination changes
   useEffect(() => {
     const updateStats = async () => {
       if (origin && destination) {
-        const [foot, bike, car] = await Promise.all([
+        const [foot, bike, car, pub] = await Promise.all([
           getRealRoute(origin, destination, 'foot'),
           getRealRoute(origin, destination, 'bike'),
-          getRealRoute(origin, destination, 'car')
+          getRealRoute(origin, destination, 'car'),
+          getRealRoute(origin, destination, 'public')
         ]);
         
         setModeStats({
           foot: { duration: foot.duration },
           bike: { duration: bike.duration },
-          car: { duration: car.duration }
+          car: { duration: car.duration },
+          public: { duration: pub.duration }
         });
 
-        // Default to car path on first load
+        // Default to the most logical "fastest" or standard option (Car)
         if (!selectedRouteId) {
           setRoutePath(car.path);
           setPathColor("#ef4444");
