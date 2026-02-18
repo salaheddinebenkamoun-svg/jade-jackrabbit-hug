@@ -6,29 +6,29 @@ import { cn } from '@/lib/utils';
 
 const TRANSPORT_OPTIONS = [
   // Personal Transport
-  { id: 'foot', type: 'Walk', line: 'Marche', color: 'bg-emerald-500', hex: '#10b981', category: 'personal', icon: Footprints },
-  { id: 'bike', type: 'Cycle', line: 'Vélo', color: 'bg-blue-500', hex: '#3b82f6', category: 'personal', icon: Bike },
-  { id: 'car', type: 'Cab', line: 'Petit Taxi', color: 'bg-red-500', hex: '#ef4444', category: 'personal', icon: Car },
+  { id: 'foot', type: 'Walk', line: 'Marche', color: 'bg-emerald-500', hex: '#10b981', category: 'personal', icon: Footprints, mode: 'foot' },
+  { id: 'bike', type: 'Cycle', line: 'Vélo', color: 'bg-blue-500', hex: '#3b82f6', category: 'personal', icon: Bike, mode: 'bike' },
+  { id: 'car', type: 'Cab', line: 'Petit Taxi', color: 'bg-red-500', hex: '#ef4444', category: 'personal', icon: Car, mode: 'car' },
   
   // Tramway
-  { id: 't1', type: 'Tramway', line: 'T1', color: 'bg-emerald-600', hex: '#059669', category: 'public', icon: Train, price: '6 MAD' },
-  { id: 't2', type: 'Tramway', line: 'T2', color: 'bg-orange-500', hex: '#f97316', category: 'public', icon: Train, price: '6 MAD' },
-  { id: 't3', type: 'Tramway', line: 'T3', color: 'bg-blue-600', hex: '#2563eb', category: 'public', icon: Train, price: '6 MAD' },
-  { id: 't4', type: 'Tramway', line: 'T4', color: 'bg-purple-600', hex: '#9333ea', category: 'public', icon: Train, price: '6 MAD' },
+  { id: 't1', type: 'Tramway', line: 'T1', color: 'bg-emerald-600', hex: '#059669', category: 'public', icon: Train, price: '6 MAD', mode: 'public' },
+  { id: 't2', type: 'Tramway', line: 'T2', color: 'bg-orange-500', hex: '#f97316', category: 'public', icon: Train, price: '6 MAD', mode: 'public' },
+  { id: 't3', type: 'Tramway', line: 'T3', color: 'bg-blue-600', hex: '#2563eb', category: 'public', icon: Train, price: '6 MAD', mode: 'public' },
+  { id: 't4', type: 'Tramway', line: 'T4', color: 'bg-purple-600', hex: '#9333ea', category: 'public', icon: Train, price: '6 MAD', mode: 'public' },
   
   // Busway
-  { id: 'bw1', type: 'Busway', line: 'BW1', color: 'bg-yellow-500', hex: '#eab308', category: 'public', icon: Zap, price: '6 MAD' },
-  { id: 'bw2', type: 'Busway', line: 'BW2', color: 'bg-lime-500', hex: '#84cc16', category: 'public', icon: Zap, price: '6 MAD' },
+  { id: 'bw1', type: 'Busway', line: 'BW1', color: 'bg-yellow-500', hex: '#eab308', category: 'public', icon: Zap, price: '6 MAD', mode: 'public' },
+  { id: 'bw2', type: 'Busway', line: 'BW2', color: 'bg-lime-500', hex: '#84cc16', category: 'public', icon: Zap, price: '6 MAD', mode: 'public' },
   
   // Bus
-  { id: 'bus97', type: 'Bus', line: 'L97', color: 'bg-rose-500', hex: '#f43f5e', category: 'public', icon: Bus, price: '5 MAD' },
-  { id: 'bus7', type: 'Bus', line: 'L7', color: 'bg-indigo-500', hex: '#6366f1', category: 'public', icon: Bus, price: '5 MAD' },
+  { id: 'bus97', type: 'Bus', line: 'L97', color: 'bg-rose-500', hex: '#f43f5e', category: 'public', icon: Bus, price: '5 MAD', mode: 'public' },
+  { id: 'bus7', type: 'Bus', line: 'L7', color: 'bg-indigo-500', hex: '#6366f1', category: 'public', icon: Bus, price: '5 MAD', mode: 'public' },
 ];
 
 interface SuggestedRoutesProps {
   isVisible: boolean;
   selectedId: string | null;
-  onSelect: (id: string, color: string, mode: 'foot' | 'bike' | 'car') => void;
+  onSelect: (id: string, color: string, mode: any) => void;
   modeStats: any;
 }
 
@@ -58,7 +58,7 @@ const SuggestedRoutes = ({ isVisible, selectedId, onSelect, modeStats }: Suggest
             return (
               <button
                 key={opt.id}
-                onClick={() => onSelect(opt.id, opt.hex, opt.id as any)}
+                onClick={() => onSelect(opt.id, opt.hex, opt.mode)}
                 className={cn(
                   "flex flex-col items-center justify-center p-4 rounded-3xl border-2 transition-all duration-300",
                   isSelected 
@@ -86,11 +86,11 @@ const SuggestedRoutes = ({ isVisible, selectedId, onSelect, modeStats }: Suggest
         <div className="space-y-3 px-6">
           {publicTrans.map((opt) => {
             const isSelected = selectedId === opt.id;
-            const stats = modeStats['car']; // Using car stats as proxy for public transport duration
+            const stats = modeStats['car']; // Base duration for public transport
             return (
               <div
                 key={opt.id}
-                onClick={() => onSelect(opt.id, opt.hex, 'car')}
+                onClick={() => onSelect(opt.id, opt.hex, opt.mode)}
                 className={cn(
                   "bg-white p-5 rounded-[28px] border-2 transition-all duration-300 cursor-pointer flex items-center justify-between group",
                   isSelected 
@@ -110,7 +110,7 @@ const SuggestedRoutes = ({ isVisible, selectedId, onSelect, modeStats }: Suggest
                       <span className="font-black text-gray-900 text-lg">{opt.line}</span>
                       <span className="text-xs text-gray-300">•</span>
                       <span className="text-sm font-black text-gray-700">
-                        {Math.round(stats?.duration * 1.2) || '--'} min
+                        {Math.round(stats?.duration * 1.3) + 8} min
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase mt-0.5">

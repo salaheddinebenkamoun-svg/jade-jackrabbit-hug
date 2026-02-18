@@ -23,22 +23,31 @@ const Index = () => {
     car: { duration: 0 }
   });
 
-  const updateStats = async (start: [number, number], end: [number, number]) => {
-    const foot = await getRealRoute(start, end, 'foot');
-    const bike = await getRealRoute(start, end, 'bike');
-    const car = await getRealRoute(start, end, 'car');
-    
-    setModeStats({
-      foot: { duration: foot.duration },
-      bike: { duration: bike.duration },
-      car: { duration: car.duration }
-    });
-  };
-
+  // Update base stats when origin/destination changes
   useEffect(() => {
-    if (origin && destination) {
-      updateStats(origin, destination);
-    }
+    const updateStats = async () => {
+      if (origin && destination) {
+        const [foot, bike, car] = await Promise.all([
+          getRealRoute(origin, destination, 'foot'),
+          getRealRoute(origin, destination, 'bike'),
+          getRealRoute(origin, destination, 'car')
+        ]);
+        
+        setModeStats({
+          foot: { duration: foot.duration },
+          bike: { duration: bike.duration },
+          car: { duration: car.duration }
+        });
+
+        // Default to car path on first load
+        if (!selectedRouteId) {
+          setRoutePath(car.path);
+          setPathColor("#ef4444");
+          setSelectedRouteId('car');
+        }
+      }
+    };
+    updateStats();
   }, [origin, destination]);
 
   const handleMapClick = (latlng: [number, number]) => {
@@ -48,7 +57,7 @@ const Index = () => {
     } else if (!destination) {
       setDestination(latlng);
       setDestinationName(`${latlng[0].toFixed(4)}, ${latlng[1].toFixed(4)}`);
-      showSuccess("Itinéraire calculé");
+      showSuccess("Destination définie");
     }
   };
 
@@ -73,17 +82,18 @@ const Index = () => {
     setDestinationName(tempOriginName);
     setSelectedRouteId(null);
     setRoutePath(null);
-    showSuccess("Départ et arrivée inversés");
+    showSuccess("Itinéraire inversé");
   };
 
-  const handleSelectOption = async (id: string, color: string, routingMode: 'foot' | 'bike' | 'car') => {
+  const handleSelectOption = async (id: string, color: string, routingMode: 'foot' | 'bike' | 'car' | 'public') => {
+    if (!origin || !destination) return;
+    
     setSelectedRouteId(id);
     setPathColor(color);
-    if (origin && destination) {
-      const result = await getRealRoute(origin, destination, routingMode);
-      setRoutePath(result.path);
-      showSuccess(`${id.toUpperCase()} sélectionné`);
-    }
+    
+    const result = await getRealRoute(origin, destination, routingMode);
+    setRoutePath(result.path);
+    showSuccess(`${id.toUpperCase()} sélectionné`);
   };
 
   const handleReset = () => {
