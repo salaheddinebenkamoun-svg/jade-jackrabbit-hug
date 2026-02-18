@@ -86,7 +86,7 @@ const SuggestedRoutes = ({ isVisible, selectedId, onSelect, modeStats }: Suggest
         <div className="space-y-3 px-6">
           {publicTrans.map((opt) => {
             const isSelected = selectedId === opt.id;
-            const stats = modeStats['car']; // Base duration for public transport
+            const stats = modeStats['public']; // Use the specific public transport stats
             return (
               <div
                 key={opt.id}
@@ -110,7 +110,7 @@ const SuggestedRoutes = ({ isVisible, selectedId, onSelect, modeStats }: Suggest
                       <span className="font-black text-gray-900 text-lg">{opt.line}</span>
                       <span className="text-xs text-gray-300">•</span>
                       <span className="text-sm font-black text-gray-700">
-                        {Math.round(stats?.duration * 1.3) + 8} min
+                        {stats?.duration || '--'} min
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase mt-0.5">

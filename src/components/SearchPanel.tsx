@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Search, MapPin, ArrowUpDown, Navigation } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { showError } from '@/utils/toast';
@@ -16,30 +16,41 @@ interface SearchPanelProps {
 const SearchPanel = ({ originName, destinationName, onSelectLocation, onSwap, onReset }: SearchPanelProps) => {
   const [queries, setQueries] = useState({ origin: originName, destination: destinationName });
   const [suggestions, setSuggestions] = useState<{ type: 'origin' | 'destination', items: any[] } | null>(null);
+  const [showCurrentLocOption, setShowCurrentLocOption] = useState<'origin' | 'destination' | null>(null);
+  const searchTimeout = useRef<any>(null);
 
   useEffect(() => {
     setQueries({ origin: originName, destination: destinationName });
   }, [originName, destinationName]);
 
   const search = async (query: string, type: 'origin' | 'destination') => {
-    if (query.length < 3) return;
-    try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + " Casablanca")}&limit=5`);
-      const data = await res.json();
-      setSuggestions({ type, items: data });
-    } catch (e) { console.error(e); }
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    
+    if (query.length < 3) {
+      setSuggestions(null);
+      return;
+    }
+
+    searchTimeout.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + " Casablanca")}&limit=5`);
+        const data = await res.json();
+        setSuggestions({ type, items: data });
+      } catch (e) { console.error(e); }
+    }, 300);
   };
 
-  const handleLocateMe = () => {
+  const handleLocateMe = (type: 'origin' | 'destination') => {
     if (!navigator.geolocation) {
-      showError("La géolocalisation n'est pas supportée par votre navigateur");
+      showError("La géolocalisation n'est pas supportée");
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        onSelectLocation('origin', [latitude, longitude], "Ma position actuelle");
+        onSelectLocation(type, [latitude, longitude], "Ma position actuelle");
+        setShowCurrentLocOption(null);
       },
       () => {
         showError("Impossible d'accéder à votre position");
@@ -64,19 +75,17 @@ const SearchPanel = ({ originName, destinationName, onSelectLocation, onSwap, on
       <div className="bg-white rounded-2xl p-4 shadow-inner relative">
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <button 
-              onClick={handleLocateMe}
-              className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center hover:bg-emerald-100 transition-colors"
-              title="Ma position"
-            >
+            <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
               <Navigation size={18} />
-            </button>
+            </div>
             <div className="flex-1">
               <span className="text-[10px] font-black text-emerald-600 block uppercase">Départ</span>
               <input
                 type="text"
                 placeholder="Point de départ"
                 value={queries.origin}
+                onFocus={() => setShowCurrentLocOption('origin')}
+                onBlur={() => setTimeout(() => setShowCurrentLocOption(null), 200)}
                 onChange={(e) => {
                   setQueries(p => ({ ...p, origin: e.target.value }));
                   search(e.target.value, 'origin');
@@ -98,6 +107,8 @@ const SearchPanel = ({ originName, destinationName, onSelectLocation, onSwap, on
                 type="text"
                 placeholder="Où allez-vous ?"
                 value={queries.destination}
+                onFocus={() => setShowCurrentLocOption('destination')}
+                onBlur={() => setTimeout(() => setShowCurrentLocOption(null), 200)}
                 onChange={(e) => {
                   setQueries(p => ({ ...p, destination: e.target.value }));
                   search(e.target.value, 'destination');
@@ -115,16 +126,29 @@ const SearchPanel = ({ originName, destinationName, onSelectLocation, onSwap, on
           <ArrowUpDown size={20} />
         </button>
 
-        {suggestions && suggestions.items.length > 0 && (
+        {/* Suggestions Dropdown */}
+        {(showCurrentLocOption || (suggestions && suggestions.items.length > 0)) && (
           <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
-            {suggestions.items.map((item, i) => (
+            {showCurrentLocOption && (
+              <button
+                onClick={() => handleLocateMe(showCurrentLocOption)}
+                className="w-full px-4 py-4 text-left text-sm hover:bg-emerald-50 border-b border-gray-50 flex items-center gap-3 group"
+              >
+                <div className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                  <Navigation size={16} />
+                </div>
+                <span className="font-black text-emerald-600">Ma position actuelle</span>
+              </button>
+            )}
+            
+            {suggestions && suggestions.items.map((item, i) => (
               <button
                 key={i}
                 onClick={() => {
                   onSelectLocation(suggestions.type, [parseFloat(item.lat), parseFloat(item.lon)], item.display_name);
                   setSuggestions(null);
                 }}
-                className="w-full px-4 py-3 text-left text-sm hover:bg-emerald-50 border-b border-gray-50 last:border-none flex items-center gap-3"
+                className="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 border-b border-gray-50 last:border-none flex items-center gap-3"
               >
                 <MapPin size={16} className="text-gray-400" />
                 <span className="truncate font-bold text-gray-700">{item.display_name.split(',')[0]}</span>
