@@ -63,8 +63,24 @@ const SuggestedRoutes = ({ isVisible, selectedId, onSelect, modeStats }: Suggest
     </div>
   );
 
-  const personal = TRANSPORT_OPTIONS.filter((o) => o.category === 'personal');
-  const publicTrans = TRANSPORT_OPTIONS.filter((o) => o.category === 'public');
+  const byFastestFirst = (a: TransportOption, b: TransportOption) => {
+    const aDuration = modeStats[a.mode]?.duration ?? 0;
+    const bDuration = modeStats[b.mode]?.duration ?? 0;
+    if (aDuration === 0 && bDuration === 0) return 0;
+    if (aDuration === 0) return 1;
+    if (bDuration === 0) return -1;
+    return aDuration - bDuration;
+  };
+
+  const personal = TRANSPORT_OPTIONS
+    .filter((o) => o.category === 'personal')
+    .sort(byFastestFirst);
+
+  const publicTrans = TRANSPORT_OPTIONS
+    .filter((o) => o.category === 'public')
+    .sort(byFastestFirst);
+
+  const fastestPublicId = publicTrans.find((opt) => (modeStats[opt.mode]?.duration ?? 0) > 0)?.id;
 
   return (
     <div className="space-y-8 py-6">
@@ -138,6 +154,11 @@ const SuggestedRoutes = ({ isVisible, selectedId, onSelect, modeStats }: Suggest
                   </div>
                 </div>
                 <div className="text-right">
+                  {fastestPublicId === opt.id && (
+                    <div className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-1 rounded-lg mb-1">
+                      Meilleur choix
+                    </div>
+                  )}
                   <div className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">{opt.price}</div>
                   <ChevronRight size={20} className={cn('ml-auto mt-2 transition-colors', isSelected ? 'text-gray-700' : 'text-gray-300')} />
                 </div>
