@@ -16,6 +16,7 @@ const Index = () => {
   const [destinationName, setDestinationName] = useState('');
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [routePath, setRoutePath] = useState<[number, number][] | null>(null);
+  const [previewPath, setPreviewPath] = useState<[number, number][] | null>(null);
   const [pathColor, setPathColor] = useState("#10b981");
   const [isPublic, setIsPublic] = useState(false);
   const [modeStats, setModeStats] = useState({
@@ -25,7 +26,7 @@ const Index = () => {
     public: { duration: 0 }
   });
 
-  // Update base stats when origin/destination changes
+  // Update base stats and preview path when origin/destination changes
   useEffect(() => {
     const updateStats = async () => {
       if (origin && destination) {
@@ -42,6 +43,9 @@ const Index = () => {
           car: { duration: car.duration },
           public: { duration: pub.duration }
         });
+
+        // Use the car path as the default preview path because it follows main roads
+        setPreviewPath(car.path);
       }
     };
     updateStats();
@@ -68,6 +72,7 @@ const Index = () => {
     }
     setSelectedRouteId(null);
     setRoutePath(null);
+    setPreviewPath(null);
     setIsPublic(false);
   };
 
@@ -80,6 +85,7 @@ const Index = () => {
     setDestinationName(tempOriginName);
     setSelectedRouteId(null);
     setRoutePath(null);
+    setPreviewPath(null);
     setIsPublic(false);
     showSuccess("Itinéraire inversé");
   };
@@ -102,6 +108,7 @@ const Index = () => {
     setOriginName('');
     setDestinationName('');
     setRoutePath(null);
+    setPreviewPath(null);
     setSelectedRouteId(null);
     setIsPublic(false);
   };
@@ -133,6 +140,7 @@ const Index = () => {
           origin={origin} 
           destination={destination} 
           selectedRoutePath={routePath}
+          previewPath={previewPath}
           pathColor={pathColor}
           isPublicTransport={isPublic}
           onMapClick={handleMapClick}
