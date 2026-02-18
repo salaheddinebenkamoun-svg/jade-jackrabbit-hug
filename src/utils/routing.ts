@@ -1,28 +1,38 @@
 "use client";
 
+type RoutingProfile = 'foot' | 'bike' | 'taxi' | 'tramway' | 'busway' | 'bus' | 'car';
+
 /**
  * Fetches a real street-following route from OSRM API with mode-specific profiles
  */
 export const getRealRoute = async (
   origin: [number, number],
   destination: [number, number],
-  profile: 'foot' | 'bike' | 'taxi' | 'tramway' | 'busway' | 'bus' | 'car' = 'car'
+  profile: RoutingProfile = 'car'
 ): Promise<{ path: [number, number][], duration: number, distance: number }> => {
   try {
     // Map our internal modes to OSRM profiles.
     // OSRM does not expose dedicated tram/busway lanes worldwide, so we use driving
     // geometry and calibrate ETA per mode to feel closer to real-life conditions.
-    const osrmProfile = 
-      profile === 'foot' ? 'walking' : 
-      profile === 'bike' ? 'cycling' : 
-      'driving';
+    const osrmProfileByMode: Record<RoutingProfile, 'walking' | 'cycling' | 'driving'> = {
+      foot: 'walking',
+      bike: 'cycling',
+      taxi: 'driving',
+      tramway: 'driving',
+      busway: 'driving',
+      bus: 'driving',
+      car: 'driving',
+    };
+    const osrmProfile = osrmProfileByMode[profile];
 
     const url = `https://router.project-osrm.org/route/v1/${osrmProfile}/${origin[1]},${origin[0]};${destination[1]},${destination[0]}?overview=full&geometries=geojson`;
     
     const response = await fetch(url);
     const data = await response.json();
 
-    if (data.code !== 'Ok') throw new Error('Route not found');
+    if (data.code !== 'Ok' || !Array.isArray(data.routes) || data.routes.length === 0) {
+      throw new Error('Route not found');
+    }
 
     const route = data.routes[0];
     const path = route.geometry.coordinates.map((coord: [number, number]) => [coord[1], coord[0]]);
@@ -99,7 +109,7 @@ export const getRouteByOption = async (
   origin: [number, number],
   destination: [number, number],
   optionId: string,
-  mode: 'foot' | 'bike' | 'taxi' | 'tramway' | 'busway' | 'bus'
+  mode: Exclude<RoutingProfile, 'car'>
 ): Promise<{ path: [number, number][], duration: number, distance: number }> => {
   const result = await getRealRoute(origin, destination, mode);
 
