@@ -5,16 +5,20 @@ import TransportMap from '@/components/TransportMap';
 import SearchPanel from '@/components/SearchPanel';
 import SuggestedRoutes, { type RoutingMode } from '@/components/SuggestedRoutes';
 import { getRealRoute, getRouteByOption } from '@/utils/routing';
+import { getPublicOptionMetrics } from '@/utils/transitRouting';
 import { showSuccess } from '@/utils/toast';
 
 const CASABLANCA_CENTER: [number, number] = [33.5731, -7.5898];
 
-interface ModeMetric {
+interface OptionMetric {
   duration: number;
   distance: number;
+  feasible?: boolean;
+  summary?: string;
+  accessDistanceKm?: number;
 }
 
-const EMPTY_MODE: ModeMetric = { duration: 0, distance: 0 };
+const EMPTY_METRIC: OptionMetric = { duration: 0, distance: 0 };
 
 const Index = () => {
   const [origin, setOrigin] = useState<[number, number] | null>(null);
@@ -26,14 +30,12 @@ const Index = () => {
   const [previewPath, setPreviewPath] = useState<[number, number][] | null>(null);
   const [pathColor, setPathColor] = useState('#10b981');
   const [selectedMode, setSelectedMode] = useState<RoutingMode | null>(null);
-  const [modeStats, setModeStats] = useState<Record<RoutingMode, ModeMetric>>({
-    foot: EMPTY_MODE,
-    bike: EMPTY_MODE,
-    taxi: EMPTY_MODE,
-    tramway: EMPTY_MODE,
-    busway: EMPTY_MODE,
-    bus: EMPTY_MODE,
+  const [optionStats, setOptionStats] = useState<Record<string, OptionMetric>>({
+    foot: EMPTY_METRIC,
+    bike: EMPTY_METRIC,
+    taxi: EMPTY_METRIC,
   });
+  const [recommendation, setRecommendation] = useState('Sélectionnez deux points pour obtenir une recommandation réelle sur le réseau Casa Tramway / Busway / Bus.');
 
   useEffect(() => {
     const updateStats = async () => {
@@ -41,25 +43,35 @@ const Index = () => {
         return;
       }
 
-      const [foot, bike, taxi, tramway, busway, bus] = await Promise.all([
+      const [foot, bike, taxi] = await Promise.all([
         getRealRoute(origin, destination, 'foot'),
         getRealRoute(origin, destination, 'bike'),
         getRealRoute(origin, destination, 'taxi'),
-        getRealRoute(origin, destination, 'tramway'),
-        getRealRoute(origin, destination, 'busway'),
-        getRealRoute(origin, destination, 'bus'),
       ]);
 
-      setModeStats({
+      const publicMetrics = getPublicOptionMetrics(origin, destination);
+      const merged: Record<string, OptionMetric> = {
         foot: { duration: foot.duration, distance: foot.distance },
         bike: { duration: bike.duration, distance: bike.distance },
         taxi: { duration: taxi.duration, distance: taxi.distance },
-        tramway: { duration: tramway.duration, distance: tramway.distance },
-        busway: { duration: busway.duration, distance: busway.distance },
-        bus: { duration: bus.duration, distance: bus.distance },
-      });
+        ...publicMetrics,
+      };
 
+      setOptionStats(merged);
       setPreviewPath(taxi.path);
+
+      const fastestPublic = Object.entries(publicMetrics)
+        .filter(([, value]) => value.feasible)
+        .sort((a, b) => a[1].duration - b[1].duration)[0];
+
+      if (!fastestPublic) {
+        setRecommendation(`Distance estimée: ${taxi.distance} km. Option la plus réaliste: taxi (${taxi.duration} min), car les lignes structurantes sont loin de vos deux points.`);
+        return;
+      }
+
+      const [lineId, lineMetric] = fastestPublic;
+      const lineChoice = lineMetric.summary?.split(':')[0] || lineId.toUpperCase();
+      setRecommendation(`Distance estimée: ${lineMetric.distance} km. Meilleur choix réseau: ${lineChoice} (~${lineMetric.duration} min), avec correspondance marche d'environ ${lineMetric.accessDistanceKm ?? 0} km.`);
     };
 
     updateStats();
@@ -125,6 +137,7 @@ const Index = () => {
     setPreviewPath(null);
     setSelectedRouteId(null);
     setSelectedMode(null);
+    setRecommendation('Sélectionnez deux points pour obtenir une recommandation réelle sur le réseau Casa Tramway / Busway / Bus.');
   };
 
   return (
@@ -143,7 +156,8 @@ const Index = () => {
             isVisible={!!(origin && destination)}
             selectedId={selectedRouteId}
             onSelect={handleSelectOption}
-            modeStats={modeStats}
+            optionStats={optionStats}
+            recommendation={recommendation}
           />
         </div>
       </div>
