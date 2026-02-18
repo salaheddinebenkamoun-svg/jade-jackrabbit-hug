@@ -4,7 +4,7 @@ import React from 'react';
 import { Clock, Train, Bus, Zap, ChevronRight, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Simulation de données réelles basées sur le réseau Casa Tramway/Busway
+// Realistic Casablanca transport data based on Casa Tramway/Busway network
 const MOCK_ROUTES = [
   {
     id: 't1',
@@ -50,7 +50,7 @@ const MOCK_ROUTES = [
     duration: '42 min',
     arrival: '15:26',
     price: '5 MAD',
-    path: null, // Le bus suit souvent le trajet direct pour la démo
+    path: null, // Will fallback to straight line or direct path
     steps: ['Marche 2 min', 'Bus 97 (Alsa)', 'Marche 8 min']
   }
 ];
@@ -66,7 +66,7 @@ const SuggestedRoutes = ({ isVisible, onSelectRoute, selectedId }: SuggestedRout
     return (
       <div className="mt-6 bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-dashed border-gray-200 flex flex-col items-center text-center">
         <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
-          <Info size={20} className="text-gray-400" />
+          <span className="text-gray-400"><Info size={20} /></span>
         </div>
         <p className="text-sm font-medium text-gray-500">Entrez votre trajet pour voir les options de transport (Tram, Busway, Bus)</p>
       </div>

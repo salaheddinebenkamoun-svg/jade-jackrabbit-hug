@@ -83,7 +83,7 @@ const Index = () => {
             <SuggestedRoutes 
               isVisible={!!(origin && destination)} 
               onSelectRoute={handleSelectRoute}
-              selectedId={null} // On pourrait ajouter un état pour l'ID sélectionné
+              selectedId={null}
             />
           </div>
         </div>
